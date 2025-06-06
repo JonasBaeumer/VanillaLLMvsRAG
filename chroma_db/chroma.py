@@ -101,9 +101,9 @@ def store_multiple_items(collection, items: list):
         logger.error(f"Error storing multiple items: {e}")
 
 
-def retrieve_item(collection, item_id: str):
+def get_item(collection, item_id: str):
     """
-    Retrieve a single item from the ChromaDB collection.
+    Get a single item from the ChromaDB collection.
 
     Parameters
     ----------
@@ -129,9 +129,9 @@ def retrieve_item(collection, item_id: str):
         return None
     
 
-def retrieve_multiple_items(collection, item_ids: list):
+def get_multiple_items(collection, item_ids: list):
     """
-    Retrieve multiple items from the ChromaDB collection.
+    Get multiple items from the ChromaDB collection by item id.
 
     Parameters
     ----------
@@ -181,6 +181,121 @@ def retrieve_similar_items(collection, query_embedding: list, n_results: int = 5
         logger.error(f"Error retrieving similar items: {e}")
         return []
 
+
+def delete_item(collection, item_id: str):
+    """
+    Delete a single item from the ChromaDB collection.
+
+    Parameters
+    ----------
+    collection : chromadb.api.Collection
+        The ChromaDB collection to delete the item from.
+    item_id : str
+        Unique identifier for the item to delete.
+    """
+    try:
+        collection.delete(ids=[item_id])
+        logger.info(f"Item {item_id} deleted successfully.")
+    except Exception as e:
+        logger.error(f"Error deleting item {item_id}: {e}")
+
+
+def delete_multiple_items(collection, item_ids: list):
+    """
+    Delete multiple items from the ChromaDB collection.
+
+    Parameters
+    ----------
+    collection : chromadb.api.Collection
+        The ChromaDB collection to delete the items from.
+    item_ids : list
+        List of unique identifiers for the items to delete.
+    """
+    try:
+        collection.delete(ids=item_ids)
+        logger.info(f"{len(item_ids)} items deleted successfully.")
+    except Exception as e:
+        logger.error(f"Error deleting multiple items: {e}")
+
+
+def item_exists(collection, item_id: str) -> bool:
+    """
+    Check if an item exists in the ChromaDB collection.
+
+    Parameters
+    ----------
+    collection : chromadb.api.Collection
+        The ChromaDB collection to check.
+    item_id : str
+        Unique identifier for the item to check.
+
+    Returns
+    -------
+    bool
+        True if the item exists, False otherwise.
+    """
+    try:
+        results = collection.get(ids=[item_id])
+        exists = bool(results and results['documents'])
+        logger.info(f"Item {item_id} exists: {exists}")
+        return exists
+    except Exception as e:
+        logger.error(f"Error checking existence of item {item_id}: {e}")
+        return False
+    
+
+def list_all_ids(collection) -> list:
+    """
+    List all item IDs in the ChromaDB collection.
+
+    Parameters
+    ----------
+    collection : chromadb.api.Collection
+        The ChromaDB collection to list IDs from.
+
+    Returns
+    -------
+    list
+        List of all item IDs in the collection.
+    """
+    try:
+        results = collection.get()
+        ids = results['ids'] if results and 'ids' in results else []
+        logger.info(f"Retrieved {len(ids)} item IDs.")
+        return ids
+    except Exception as e:
+        logger.error(f"Error listing all IDs: {e}")
+        return []
+    
+
+def update_item(collection, item_id: str, item_data: dict):
+    """
+    Update an existing item in the ChromaDB collection.
+
+    Parameters
+    ----------
+    collection : chromadb.api.Collection
+        The ChromaDB collection to update the item in.
+    item_id : str
+        Unique identifier for the item to update.
+    item_data : dict
+        Data to update in the item.
+    """
+    if not item_exists(collection, item_id):
+        logger.error(f"Item {item_id} does not exist. Cannot update.")
+        return
+
+    try:
+        collection.update(
+            ids=[item_id],
+            documents=[item_data.get("document", "")],
+            metadatas=[item_data.get("metadata", {})],
+            embeddings=[item_data.get("embedding", [])]
+        )
+        logger.info(f"Item {item_id} updated successfully.")
+    except Exception as e:
+        logger.error(f"Error updating item {item_id}: {e}")
+        
 
 if __name__ == "__main__":
     
