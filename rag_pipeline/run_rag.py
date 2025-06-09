@@ -3,7 +3,7 @@ from models.openai_models import OpenAIEmbeddingModel, OpenAILLM
 from rag_pipeline.retriever import retrieve_context
 from rag_pipeline.prompt_builder import build_prompt
 from rag_pipeline.prompt_templates import RAG_TEMPLATE_V1
-from rag_pipeline.generator import generate_answer
+from models.generator import generate_answer
 from chroma_db.chroma_utils import load_collection 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
