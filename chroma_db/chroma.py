@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 import chromadb
 from chromadb.config import Settings
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 
-def initiate_chroma_db(directory_path: str) -> chromadb.api.client:
+def initiate_chroma_db(directory_path: str) -> chromadb.PersistentClient:
     """
     Initialise a persistent ChromaDB client with basic error handling.
 
@@ -50,32 +51,36 @@ def initiate_chroma_db(directory_path: str) -> chromadb.api.client:
 
 def store_single_item(collection, item_data: dict):
     """
-    Store a single item in the ChromaDB collection.
+    Store a single item in the ChromaDB collection, with duplicate check.
 
     Parameters
     ----------
     collection : chromadb.api.Collection
         The ChromaDB collection to store the item in.
-    item_id : str
-        Unique identifier for the item.
     item_data : dict
         Data to be stored in the item.
     """
+    item_id = item_data.get("id", "")
     try:
+        if item_exists(collection, item_id):
+            logger.warning(f"Item {item_id} already exists — skipping insert.")
+            return
+
         collection.add(
-            ids=[item_data.get("id", "")],
+            ids=[item_id],
             documents=[item_data.get("document", "")],
             metadatas=[item_data.get("metadata", {})],
             embeddings=[item_data.get("embedding", [])]
         )
         logger.info(f"Item {item_id} stored successfully.")
+
     except Exception as e:
         logger.error(f"Error storing item {item_id}: {e}")
 
 
 def store_multiple_items(collection, items: list):
     """
-    Store multiple items in the ChromaDB collection.
+    Store multiple items in the ChromaDB collection, with duplicate check.
 
     Parameters
     ----------
@@ -85,10 +90,24 @@ def store_multiple_items(collection, items: list):
         List of dictionaries containing item data.
     """
     try:
-        ids = [item.get("id") for item in items]
-        documents = [item.get("document", "") for item in items]
-        metadatas = [item.get("metadata", {}) for item in items]
-        embeddings = [item.get("embedding", []) for item in items]
+        # Filter out existing items
+        new_items = []
+        for item in items:
+            item_id = item.get("id")
+            if not item_exists(collection, item_id):
+                new_items.append(item)
+            else:
+                logger.warning(f"Item {item_id} already exists — skipping insert.")
+
+        if not new_items:
+            logger.info("No new items to store (all were duplicates).")
+            return
+
+        # Prepare batch insert for new items
+        ids = [item.get("id") for item in new_items]
+        documents = [item.get("document", "") for item in new_items]
+        metadatas = [item.get("metadata", {}) for item in new_items]
+        embeddings = [item.get("embedding", []) for item in new_items]
 
         collection.add(
             ids=ids,
@@ -96,7 +115,8 @@ def store_multiple_items(collection, items: list):
             metadatas=metadatas,
             embeddings=embeddings
         )
-        logger.info(f"{len(items)} items stored successfully.")
+        logger.info(f"{len(new_items)} new items stored successfully.")
+
     except Exception as e:
         logger.error(f"Error storing multiple items: {e}")
 
@@ -168,15 +188,37 @@ def retrieve_similar_items(collection, query_embedding: list, n_results: int = 5
 
     Returns
     -------
-    list
-        List of similar item data.
+    list of dict
+        List of similar item data:
+        [{"id": ..., "document": ..., "metadata": ..., "distance": ...}, ...]
     """
     try:
         results = collection.query(
             query_embeddings=[query_embedding],
-            n_results=n_results
+            n_results=n_results,
+            include=["documents", "metadatas", "distances"]
         )
-        return results['documents'] if results and results['documents'] else []
+
+        if not results or not results['documents']:
+            return []
+
+        # Unpack results
+        ids = results['ids'][0]
+        documents = results['documents'][0]
+        metadatas = results['metadatas'][0]
+        distances = results['distances'][0]
+
+        # Build structured result list
+        return [
+            {
+                "id": id_,
+                "document": doc,
+                "metadata": meta,
+                "distance": dist
+            }
+            for id_, doc, meta, dist in zip(ids, documents, metadatas, distances)
+        ]
+
     except Exception as e:
         logger.error(f"Error retrieving similar items: {e}")
         return []
@@ -236,7 +278,8 @@ def item_exists(collection, item_id: str) -> bool:
     """
     try:
         results = collection.get(ids=[item_id])
-        exists = bool(results and results['documents'])
+        # Check if first list of documents contains anything
+        exists = bool(results and results['documents'] and results['documents'][0])
         logger.info(f"Item {item_id} exists: {exists}")
         return exists
     except Exception as e:
@@ -295,6 +338,31 @@ def update_item(collection, item_id: str, item_data: dict):
         logger.info(f"Item {item_id} updated successfully.")
     except Exception as e:
         logger.error(f"Error updating item {item_id}: {e}")
+
+
+def clear_collection(collection):
+    """
+    Clear all items from the ChromaDB collection.
+
+    Parameters
+    ----------
+    collection : chromadb.api.Collection
+        The ChromaDB collection to clear.
+    """
+    result = collection.get()
+    all_ids = result["ids"][0]
+
+    if not all_ids:
+        logger.info("Collection is already empty.")
+        return
+    
+    try:
+        collection.delete(ids=all_ids)
+        unique_ids = set(all_ids)
+        logger.info(f"Deleted {len(unique_ids)} unique items ({len(all_ids)} total embeddings) from collection '{collection.name}'.")
+
+    except Exception as e:
+        logger.error(f"Error clearing collection: {e}")
         
 
 if __name__ == "__main__":
@@ -303,6 +371,93 @@ if __name__ == "__main__":
     # initiate_chroma_db("./chroma_db")
     # print("ChromaDB initialized successfully.")
 
+    from sentence_transformers import SentenceTransformer
 
+    # 1️⃣ Load embedding model (same for indexing & query)
+    embed_model = SentenceTransformer("BAAI/bge-large-en")
 
+    # 2️⃣ Initiate Chroma DB and collection
+    db_dir = "./chroma_db"
+    client = initiate_chroma_db(db_dir)
+    collection = client.get_or_create_collection("papers")
 
+    # 3️⃣ Define mock paper data
+    papers = [
+        {
+            "id": "paper-001",
+            "document": "Transformers are neural networks designed to process sequential data using attention mechanisms.",
+            "metadata": {"title": "Attention is All You Need", "year": 2017},
+            "embedding": embed_model.encode("Transformers are neural networks designed to process sequential data using attention mechanisms.", normalize_embeddings=True).tolist()
+        },
+        {
+            "id": "paper-002",
+            "document": "Retrieval-augmented generation improves language models by grounding them on external documents.",
+            "metadata": {"title": "RAG: Retrieval-Augmented Generation", "year": 2020},
+            "embedding": embed_model.encode("Retrieval-augmented generation improves language models by grounding them on external documents.", normalize_embeddings=True).tolist()
+        },
+        {
+            "id": "paper-003",
+            "document": "Vector databases enable fast similarity search in high-dimensional embedding spaces.",
+            "metadata": {"title": "Vector Search at Scale", "year": 2022},
+            "embedding": embed_model.encode("Vector databases enable fast similarity search in high-dimensional embedding spaces.", normalize_embeddings=True).tolist()
+        }
+    ]
+
+    # 4️⃣ Store papers (first insert → should store them)
+    print("\n=== First insert of papers ===")
+    store_multiple_items(collection, papers)
+    time.sleep(0.5)
+
+    # 5️⃣ Attempt to store same papers again (should skip all)
+    print("\n=== Attempting to insert duplicate papers ===")
+    store_multiple_items(collection, papers)
+    time.sleep(0.5)
+
+    # 6️⃣ Insert one duplicate + one new item
+    print("\n=== Attempting to insert mixed batch (1 duplicate, 1 new) ===")
+    new_paper = {
+        "id": "paper-004",
+        "document": "Embedding models transform text into numerical representations for downstream tasks.",
+        "metadata": {"title": "Introduction to Embedding Models", "year": 2024},
+        "embedding": embed_model.encode("Embedding models transform text into numerical representations for downstream tasks.", normalize_embeddings=True).tolist()
+    }
+    mixed_batch = [papers[0], new_paper]   # paper-001 duplicate, paper-004 new
+
+    store_multiple_items(collection, mixed_batch)
+    time.sleep(0.5)
+
+    # 7️⃣ List all stored IDs
+    print("\n=== Stored IDs after duplicate tests ===")
+    all_ids = list_all_ids(collection)
+    print(all_ids)
+
+    # 8️⃣ Retrieve similar items
+    print("\n=== Retrieving similar items for query ===")
+    query_text = "How can retrieval help improve language models?"
+    query_embedding = embed_model.encode(query_text, normalize_embeddings=True).tolist()
+
+    similar_items = retrieve_similar_items(collection, query_embedding, n_results=3)
+    for idx, item in enumerate(similar_items, 1):
+        print(f"\nResult {idx}:")
+        print(f"ID: {item['id']}")
+        print(f"Title: {item['metadata'].get('title')}")
+        print(f"Distance: {item['distance']:.4f}")
+
+    # 9️⃣ Get single paper by ID
+    print("\n=== Get single item by ID ===")
+    item = get_item(collection, "paper-001")
+    print(item)
+
+    # 🔟 Delete one item
+    print("\n=== Deleting one item ===")
+    delete_item(collection, "paper-003")
+    print("Remaining IDs:", list_all_ids(collection))
+
+    # 🔄 Clear entire collection
+    print("\n=== Clearing collection ===")
+    clear_collection(collection)
+    client.persist()
+    time.sleep(0.5)
+    print("Final IDs:", list_all_ids(collection))
+
+    print("\n=== Test run complete. ===")
