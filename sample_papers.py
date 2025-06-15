@@ -463,6 +463,26 @@ effect in non-hermitian topolectrical cir- cuits. Nat. Commun. 12,
 7201 (2021).
 """
 
+one_shot_review_example = """
+Reviewer #1 (Remarks to the Author):
+Manuscript by Ding et al.
+Title: Paleomagnetic evidence for Neoarchean plate mobilism
+This manuscript presents a new 2.48 Ga paleomagnetic pole from the Elbow Creek mafic dykes of the Wyoming carton. The paleomagnetic data presented here is of high-quality (key pole), with a positive field stability test (positive baked contact test). The new 2.48 Ga pole is used here to explore the relative horizontal plate motions between crustal blocks (Wyoming and Superior cratons) and the data is used to study the operation of plate tectonics. (i.e., plate mobilism). Based on differing paleomagnetic apparent polar wander paths of Wyoming and Superior in during 2.7-2.5 Ga authors make a well justified suggestion that the plate tectonics was in operation prior to 2.5 Ga.
+Plate tectonics have had major impact on Earth’s geologic, climatic and biologic record, but onset time of plate tectonics is debated. Time estimates range from the Hadean to the Neoproterozoic depending on the used proxy (e.g., geology, geochemistry, paleomagnetism, geodynamic models). The results from this study will interest many people in several geoscience disciplines as the onset of plate tectonics is one of the major questions in the Earth sciences. As geological record of the operation of plate tectonic may have been lost, the paleomagnetic method remains one of the most robust methods to explore the relative horizontal motion of tectonic plates (i.e. plate tectonics) at Archean.
+The manuscript is well written and it is an excellent and clear compilation of data. By combining paleomagnetic data with proxies for lithospheric rigidity and petrological and metamorphic evidence for subduction the manuscript presents a very nice study of the onset of plate tectonics. Illustration of the manuscript is of very high quality, especially Figure 3, which combines proxies for plate tectonics.
+The chosen selection between main body text and supplementary information is adequate. I have one major concern and few minor comments on the manuscript.
+Baked contact test.
+Baked contact tests are the key for this study in providing proofs of the primary magnetization. Authors claim that there are positive baked contact tests for the dykes J20S24 (cutting anorthosite, ca. 2710 Ma Stillwater Complex) and J20S28 (cutting granite, ca 2800 Ma Mouat quartz monzonite in Fig. 1).
+Dyke J20S24. Authors write that the samples from the site J21S12 (baked anorthosite) yielded an HTC that is directed SE and down with moderate inclination, broadly similar to that of the dyke. However, the mean directions from the dyke and from the baked host rock seem to be 40 apart (Fig. S6) and their alpha95 confidence cones are not overlapping. Therefore, the directions are not the same and this does not support a positive baked contact test.
+Dyke J20S28. This dyke site shows more convincing positive baked contact test than the dyke J20S24. However, the unbaked direction is obtained only from three samples. Please discuss this.
+How reliable are the unbaked directions from these sites? There are only three unbaked samples for the dyke J20S28, more for the dyke J20S24. Directions obtained from unbaked samples for these dykes are very different. Please address this.
+Minor comments:
+Both AF and TH methods were used for cleaning the magnetization and authors choose to use only TH results because there is difference between these. The manuscript is lacking a discussing of possible reasons for this, and it should be added. Moreover, if only TH method is used to define the pole, the criteria #2 of Meert et al (2021) is not fulfilled and the pole scores 0 from this criterion  fulfils 5 of the 7 seven criteria. Not 6 as indicated in the manuscript.
+Line 226 (supplementary). Dyke JLQ15? Should it be the dyke J20S24?
+Lines 231-232. There is some words missing from the sentence starting: ”The HTCs of the baked samples from sites J20S12, J20S15...”
+Lines 243-259: Confusion with component B and component C. Text reads as: “...with dike J20S14, the results suggest that its HTC (component B) should be primary...” “...high-temperature component C from dike J20S14 should be primary...”
+"""
+
 sample_paper_one_reviews = """
 ### Reviewer #1
 (Remarks to the Author)
