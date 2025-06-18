@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 def extract_docling_sections(docling_data):
     furniture = docling_data.get("furniture", {})
     sections = []
@@ -23,7 +22,6 @@ def extract_docling_sections(docling_data):
         "sections": sections,
         "full_text": full_text,
     }
-
 
 def format_reviews(reviews_data):
     formatted_reviews = []
@@ -50,43 +48,85 @@ def format_reviews(reviews_data):
         })
     return formatted_reviews
 
-
 def load_arr_emnlp_dataset(base_path):
     root = Path(base_path)
     dataset = []
 
-    for paper_dir in (root / "data").iterdir():
+    for paper_dir in root.iterdir():
         if not paper_dir.is_dir():
             continue
 
         paper_id = paper_dir.name
         paper_data = {"paper_id": paper_id, "metadata": {}, "docling_paper": {}, "reviews": []}
 
-        # Load paper-level metadata
-        paper_meta = paper_dir / "meta.json"
-        if paper_meta.exists():
-            with open(paper_meta) as f:
-                paper_data["metadata"] = json.load(f)
-
         # Always use v1 folder only for now
         v1_dir = paper_dir / "v1"
         if not v1_dir.exists():
             continue
 
+        # Load v1 metadata (skip empty or invalid files)
+        v1_meta = v1_dir / "meta.json"
+        if v1_meta.exists() and v1_meta.stat().st_size > 0:
+            try:
+                with open(v1_meta) as f:
+                    paper_data["metadata"] = json.load(f)
+            except json.JSONDecodeError:
+                print(f"⚠️ Skipping malformed meta.json in {paper_id}")
+        else:
+            print(f"⚠️ No usable meta.json in v1 for paper {paper_id}")
+
         # Load docling version of the paper
         docling_path = v1_dir / "paper.docling.json"
-        if docling_path.exists():
-            with open(docling_path) as f:
-                docling_data = json.load(f)
-                paper_data["docling_paper"] = extract_docling_sections(docling_data)
+        if docling_path.exists() and docling_path.stat().st_size > 0:
+            try:
+                with open(docling_path) as f:
+                    docling_data = json.load(f)
+                    paper_data["docling_paper"] = extract_docling_sections(docling_data)
+            except json.JSONDecodeError:
+                print(f"⚠️ Skipping malformed docling JSON for {paper_id}")
 
         # Load reviews
         reviews_path = v1_dir / "reviews.json"
-        if reviews_path.exists():
-            with open(reviews_path) as f:
-                reviews_data = json.load(f)
-                paper_data["reviews"] = format_reviews(reviews_data)
+        if reviews_path.exists() and reviews_path.stat().st_size > 0:
+            try:
+                with open(reviews_path) as f:
+                    reviews_data = json.load(f)
+                    paper_data["reviews"] = format_reviews(reviews_data)
+            except json.JSONDecodeError:
+                print(f"⚠️ Skipping malformed reviews.json for {paper_id}")
 
         dataset.append(paper_data)
 
     return dataset
+
+def main():
+    from pprint import pprint
+
+    dataset_path = "./data/ARR-EMNLP"  # Adjust as needed
+    dataset = load_arr_emnlp_dataset(dataset_path)
+
+    print(f"✅ Loaded {len(dataset)} papers.\n")
+
+    for i, paper in enumerate(dataset[:2]):
+        print(f"\n📄 Paper #{i + 1} — ID: {paper['paper_id']}")
+        print("🔹 Title:", paper["docling_paper"].get("title", "[no title]"))
+        print("🔹 Authors:", ", ".join(paper["docling_paper"].get("authors", [])))
+
+        print("🔹 Sections:")
+        for section in paper["docling_paper"].get("sections", []):
+            heading = section.get("heading", "[no heading]")
+            text = section.get("text", "")
+            print(f"  • {heading}: {text[:100].strip()}..." if text else f"  • {heading}: [empty]")
+
+        print("\n📝 Reviews:")
+        if paper["reviews"]:
+            for j, review in enumerate(paper["reviews"]):
+                print(f"  🔸 Review #{j+1}")
+                print(f"    Reviewer ID: {review['reviewer_id']}")
+                print(f"    📌 Topic and Contributions:\n      {review['topic_and_contributions'][:200]}...")
+                print(f"    🧪 Scores: {review['scores']}")
+        else:
+            print("  No reviews found.")
+
+if __name__ == "__main__":
+    main()
