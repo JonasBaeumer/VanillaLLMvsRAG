@@ -6,7 +6,9 @@ from typing import List, Dict, Any
 from data_loader.constants import OPENALEX_WORKS_ENDPOINT
 from models.openai_models import OpenAIEmbeddingModel
 from chroma_db.chroma import store_multiple_items, initiate_chroma_db
+import logging
 
+logger = logging.getLogger("openalex-loader")
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
