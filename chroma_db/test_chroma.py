@@ -11,7 +11,6 @@ if __name__ == "__main__":
     # initiate_chroma_db("./chroma_db")
     # print("ChromaDB initialized successfully.")
 
-    
     from sentence_transformers import SentenceTransformer
 
     # 1️⃣ Load embedding model (same for indexing & query)
