@@ -138,7 +138,7 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
                 titles = extract_titles_with_llm(reference_block, model=llm)
                 paper_data["docling_paper"]["reference_titles"] = titles
 
-            dataset.append(paper_data)
+        dataset.append(paper_data)
 
     return dataset
 

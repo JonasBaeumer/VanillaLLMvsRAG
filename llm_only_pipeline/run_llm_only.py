@@ -1,13 +1,14 @@
-# llm_only_pipeline/run_llm_only.py
-
 import logging
 from models.openai_models import OpenAILLM
+import json
 from llm_only_pipeline.prompt_templates import LLM_ONLY_TEMPLATE_V1
-from llm_only_pipeline.prompt_builder import build_prompt
+from llm_only_pipeline.prompt_builder import build_review_prompt
 from models.generator import generate_answer 
-from sample_papers import sample_paper_one_abstract, sample_paper_one_main, sample_paper_one_references, sample_paper_one_reviews, one_shot_review_example
+from sample_papers import sample_paper_reviews
 from acl_review_guidelines import review_guidelines
+from data_loader.dataset_loader import load_arr_emnlp_dataset
 
+logger = logging.getLogger("LLM-only-generation-Pipeline")
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -15,44 +16,34 @@ def main():
     # Step 0: Init LLM model
     llm = OpenAILLM()
 
-    # Step 1: Define user query
-    user_query = f""" 
-    You are a peer reviewer for an academic journal. Your task is to write a constructive, well-structured peer review based on the provided paper, using the journal’s review guidelines and the example review for inspiration.
+    # Step 1: Load dataset
+    dataset = load_arr_emnlp_dataset("./data/ARR-EMNLP", llm=llm, rag_eval=False)
 
-    ---
+    print(f"✅ Loaded dataset with {len(dataset)} entries.")
 
-    📄 PAPER TO REVIEW:
-    {sample_paper_one_main}
+    # Step 2: Pretty print human vs LLM reviews
+    for paper in dataset:
+        title = paper.get("docling_paper", {}).get("title", "[No Title]")
+        human_reviews = paper.get("reviews", [])
+        llm_review = paper.get("llm_generated_review")
 
-    ---
-    
-    📄 PAPER ABSTRACT:
-    {sample_paper_one_abstract}
+        print("\n" + "=" * 80)
+        print(f"📄 Title: {title}")
+        print("-" * 80)
 
-    ---
+        if human_reviews:
+            print("🧑 Human Review (first):")
+            print(json.dumps(human_reviews[0], indent=2))
+        else:
+            print("🧑 Human Review: Not available")
 
-    📝 EXAMPLE REVIEW (for format and tone only — unrelated to this paper):
-    {one_shot_review_example}
+        print("\n🤖 LLM-Generated Review:")
+        if llm_review:
+            print(json.dumps(llm_review, indent=2))
+        else:
+            print("Failed to generate review.")
+        print("=" * 80)
 
-    ---
-
-    📋 REVIEW GUIDELINES (follow these when writing your review):
-    {review_guidelines}
-
-    ---
-
-    ✍️ Now write your review of the paper. Be concise but thorough. Cover key areas such as relevance, novelty, methodology, clarity, and impact. Structure your feedback into clear sections or bullet points if appropriate. Use a neutral, professional tone. Avoid repeating the example content — it’s for format only.
-    """
-
-    # Step 2: Build prompt (LLM-only)
-    messages = build_prompt(user_query, template=LLM_ONLY_TEMPLATE_V1)
-
-    # Step 3: Generate answer from LLM
-    answer = generate_answer(llm, messages)
-
-    # Step 4: Output results
-    print("\n🔍 User Query:", user_query)
-    print("\n🧠 LLM-Only Answer:\n", answer)
 
 if __name__ == "__main__":
     main()
