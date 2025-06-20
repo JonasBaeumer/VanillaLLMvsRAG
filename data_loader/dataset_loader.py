@@ -80,7 +80,7 @@ def format_reviews(reviews_data):
 # Dataset loader
 # ---------------------------------------------------------------------------
 
-def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None):
+def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
     root = Path(base_path)
     dataset = []
 
@@ -130,14 +130,15 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None):
             except json.JSONDecodeError:
                 print(f"⚠️  Skipping malformed reviews.json for {paper_id}")
 
-        # -------- Extract reference titles with LLM ------------------------
+        # -------- Extract reference titles with LLM (only for RAG evaluation) --------
 
-        reference_block = paper_data["docling_paper"].get("references_markdown", "")
-        if reference_block:
-            titles = extract_titles_with_llm(reference_block, model=llm)
-            paper_data["docling_paper"]["reference_titles"] = titles
+        if rag_eval:
+            reference_block = paper_data["docling_paper"].get("references_markdown", "")
+            if reference_block:
+                titles = extract_titles_with_llm(reference_block, model=llm)
+                paper_data["docling_paper"]["reference_titles"] = titles
 
-        dataset.append(paper_data)
+            dataset.append(paper_data)
 
     return dataset
 
@@ -150,7 +151,7 @@ def main():
 
     from textwrap import shorten
     dataset_path = "./data/ARR-EMNLP"  # Adjust as needed
-    dataset = load_arr_emnlp_dataset(dataset_path, llm)
+    dataset = load_arr_emnlp_dataset(dataset_path, llm, True)
 
     print(f"✅ Loaded {len(dataset)} papers.\n")
 
