@@ -2,3 +2,12 @@
 /Data
 .env
 /old
+__pycache__/
+*.pyc
+chroma_db/*.sqlite3
+chroma_db/*/length.bin
+chroma_db/*/*.bin
+chroma_db/*/*.pkl
+chroma_db/f3140815-3eaf-4d96-ba10-beb0cc496219/length.bin
+chroma_db/chroma.sqlite3
+/data_loader/__pycache__/Data 

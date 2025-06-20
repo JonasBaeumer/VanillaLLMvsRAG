@@ -86,7 +86,7 @@ def fetch_abstracts_for_titles(titles: List[str]) -> List[Dict[str, Any]]:
     return found
 
 
-def store_openalex_papers_in_vector_db(papers: list, collection = "papers"):
+def store_openalex_papers_in_vector_db(papers: list, collection_name = "papers"):
     """
     Embeds and stores OpenAlex papers in the Chroma vector DB.
 
@@ -95,6 +95,9 @@ def store_openalex_papers_in_vector_db(papers: list, collection = "papers"):
         collection: ChromaDB collection handle.
     """
     embedder = OpenAIEmbeddingModel()
+
+    chroma = initiate_chroma_db("./chroma_db")
+    collection = chroma.get_or_create_collection(collection_name)
 
     # Filter papers with valid abstracts
     papers_with_abstracts = [p for p in papers if p.get("abstract")]
@@ -115,11 +118,11 @@ def store_openalex_papers_in_vector_db(papers: list, collection = "papers"):
         "document": paper["abstract"],
         "embedding": embedding,
         "metadata": {
-            "input_title": paper["input_title"],
-            "matched_title": paper["matched_title"],
-            "doi": paper["doi"],
-            "publication_year": paper["publication_year"],
-            "authors": ", ".join(paper["authors"]),  # ✅ Fix: flatten list to string
+            "input_title": paper.get("input_title") or "",
+            "matched_title": paper.get("matched_title") or "",
+            "doi": paper.get("doi") or "",
+            "publication_year": paper.get("publication_year") or -1,
+            "authors": ", ".join(paper.get("authors") or []),
         },
     }
     for paper, embedding in zip(papers, embeddings)
