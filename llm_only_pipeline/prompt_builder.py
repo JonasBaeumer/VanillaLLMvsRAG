@@ -29,10 +29,10 @@ def build_review_prompt(paper: dict, guidelines: str, sample_reviews: str) -> st
     - summary_of_strenghts
     - summary_of_weaknesses
     - comments_suggestions_and_typos
-    - scores : {
+    - scores : {{
         "soundess": 0-5,
         "overall_assessment": 0-5,
-    }
+    }}
     """
 
 def build_prompt(user_query: str, template: str) -> List[Dict[str, str]]:
