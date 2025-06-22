@@ -12,6 +12,7 @@ import logging
 from models.openai_models import OpenAIEmbeddingModel
 from models.openai_models import OpenAILLM
 from sample_papers import sample_paper_reviews
+import os
 
 logger = logging.getLogger("openalex-loader")
 # Configure logging
@@ -134,7 +135,15 @@ def main():
             print("❌ No context retrieved.")
 
         print("=" * 100)
+    
+    logger.info("Writing file content to json file...")
 
+    os.makedirs("rag_pipeline", exist_ok=True)
+
+    with open("rag_pipeline/output.json", "w", encoding="utf-8") as f:
+        json.dump(dataset, f, indent=2, ensure_ascii=False)
+
+    logger.info("✅ Dataset saved to rag_pipeline/output.json")
 
 if __name__ == "__main__":
     main()

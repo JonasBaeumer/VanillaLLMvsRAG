@@ -1,0 +1,54 @@
+[
+  {
+    "paper_id": "string",
+    "metadata": {
+      "title": "string",
+      "authors": ["string"],
+      "abstract": "string",
+      "license": "string",
+      "year": 2023,
+      "keywords": ["string"],
+      "doc_id": 0,
+      "decision": "string"
+    },
+
+    "docling_paper": {
+      "title": "string",
+      "authors": ["string"],
+      "full_text": "string",
+      "references_markdown": "string",
+      "reference_titles": ["string"]
+    },
+
+    "reviews": [
+      {
+        "reviewer_id": "string",
+        "topic_and_contributions": "string",
+        "reasons_to_accept": "string",
+        "reasons_to_reject": "string",
+        "questions_for_authors": "string",
+        "missing_references": "string",
+        "typos_and_style": "string",
+        "ethical_concerns": "string",
+        "scores": {
+          "soundness": "string",
+          "excitement": "string",
+          "reproducibility": "string",
+          "overall_assessment": "string"
+        },
+        "reviewer_confidence": "string"
+      }
+    ],
+    "retrieved_chunks": ["string"],
+    "llm_plus_rag_generated_review": {
+      "paper_summary": "string",
+      "summary_of_strengths": "string",
+      "summary_of_weaknesses": "string",
+      "comments_suggestions_and_typos": "string",
+      "scores": {
+        "soundness": 0,
+        "overall_assessment": 0
+      }
+    }
+  }
+]
