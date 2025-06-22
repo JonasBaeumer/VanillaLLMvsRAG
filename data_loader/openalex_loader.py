@@ -7,16 +7,20 @@ from data_loader.constants import OPENALEX_WORKS_ENDPOINT
 from models.openai_models import OpenAIEmbeddingModel
 from chroma_db.chroma import store_multiple_items, initiate_chroma_db
 import logging
+import os
 
 logger = logging.getLogger("openalex-loader")
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+OPENALEX_API_KEY = os.getenv("OPEN_ALEX_PREMIUM_API_KEY")
+
 def fetch_openalex_abstract(title, delay=1.0):
     """
     Queries OpenAlex with a paper title and returns metadata including the abstract.
     """
-    query_url = f"{OPENALEX_WORKS_ENDPOINT}?search={quote(title)}"
+    query_url = f"{OPENALEX_WORKS_ENDPOINT}?search={quote(title)}&api_key={OPENALEX_API_KEY}"
+
     response = requests.get(query_url)
     time.sleep(delay)
 
@@ -92,7 +96,7 @@ def store_openalex_papers_in_vector_db(papers: list, collection_name = "papers")
 
     Args:
         papers (list): List of OpenAlex paper dicts with abstract and metadata.
-        collection: ChromaDB collection handle.
+        collection_name (str): Name of the ChromaDB collection to store papers in.
     """
     embedder = OpenAIEmbeddingModel()
 
