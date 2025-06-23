@@ -10,6 +10,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def load_existing_outputs(path: str) -> dict:
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return {entry["paper_id"]: entry for entry in json.load(f)}
+    return {}
+
+
 def convert_docling_json_to_markdown(docling_json: dict) -> str:
     """Return a markdown export of a Docling JSON blob."""
     # Write to tmp so the converter can read a path

@@ -6,6 +6,7 @@ from rag_pipeline.prompt_templates import RAG_TEMPLATE_V1
 from chroma_db.chroma import initiate_chroma_db
 from data_loader.dataset_loader import load_arr_emnlp_dataset
 from data_loader.openalex_loader import fetch_abstracts_for_titles, store_openalex_papers_in_vector_db
+from data_loader.utils import load_existing_outputs
 from rag_pipeline.prompt_builder import build_review_prompt
 from acl_review_guidelines import review_guidelines
 import logging
@@ -29,27 +30,43 @@ def main():
     dataset = load_arr_emnlp_dataset("./data/ARR-EMNLP", llm=llm, rag_eval=True)
     logger.info(f"✅ Loaded dataset with {len(dataset)} entries.")
 
+    existing_outputs = load_existing_outputs("./rag_pipeline/output.json")
+    logger.info(f"Loaded {len(existing_outputs)} existing outputs from rag_pipeline/output.json.")
+
     # Step 3: Retrieve papers for references and store in ChromaDB
     papers_to_be_embedded = []
 
     for paper in dataset:
         doc = paper["docling_paper"]
+        paper_id = paper["paper_id"]
 
-        papers = fetch_abstracts_for_titles(doc.get("reference_titles", []))
-        if not papers:
-            logger.warning(f"No papers found for references in {paper['paper_id']}.")
+        if paper_id in existing_outputs:
+            logger.info(f"Skipping already processed paper: {paper_id}")
             continue
 
-        logger.info(f"Found {len(papers)} papers for references in {paper['paper_id']}.")
-        papers_to_be_embedded.extend(papers)
+        else:
+            logger.info(f"Processing paper: {paper_id}")
+
+            papers = fetch_abstracts_for_titles(doc.get("reference_titles", []))
+            if not papers:
+                logger.warning(f"No papers found for references in {paper['paper_id']}.")
+                continue
+
+            logger.info(f"Found {len(papers)} papers for references in {paper['paper_id']}.")
+            papers_to_be_embedded.extend(papers)
     
-    logger.info(f"Total papers to be embedded: {len(papers_to_be_embedded)}")
-    logger.info("Storing papers in ChromaDB...")
+    if papers_to_be_embedded:
 
-    store_openalex_papers_in_vector_db(papers_to_be_embedded, collection_name=collection_name)
-    logger.info("Successfully stored papers in ChromaDB.")
+        logger.info(f"Total papers to be embedded: {len(papers_to_be_embedded)}")
+        logger.info("Storing papers in ChromaDB...")
 
-    # Step 3.1: Initiate ChromaDB and get collection
+        store_openalex_papers_in_vector_db(papers_to_be_embedded, collection_name=collection_name)
+        logger.info("Successfully stored papers in ChromaDB.")
+
+    else: 
+        logger.warning("No papers to be embedded. Skipping ChromaDB storage.")
+
+    # Step 3a: Initiate ChromaDB and get collection
     chroma = initiate_chroma_db("./chroma_db")
     collection = chroma.get_or_create_collection(collection_name)
 
@@ -137,6 +154,8 @@ def main():
         print("=" * 100)
     
     logger.info("Writing file content to json file...")
+
+    # Step 5: Save dataset to JSON file for further processing
 
     os.makedirs("rag_pipeline", exist_ok=True)
 

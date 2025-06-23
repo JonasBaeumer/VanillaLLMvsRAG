@@ -3,6 +3,10 @@
 .env
 /old
 __pycache__/
+# Ignore __pycache__ folders in all subdirectories
+**/__pycache__/
+# Ignore compiled Python files
+__pycache__/
 *.pyc
 chroma_db/*.sqlite3
 chroma_db/*/length.bin

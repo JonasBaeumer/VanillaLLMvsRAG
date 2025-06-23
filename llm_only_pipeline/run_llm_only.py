@@ -1,13 +1,15 @@
 import logging
-from models.openai_models import OpenAILLM
 import json
+import os
 import re
 from llm_only_pipeline.prompt_templates import LLM_ONLY_TEMPLATE_V1
 from llm_only_pipeline.prompt_builder import build_review_prompt
+from models.openai_models import OpenAILLM
 from models.generator import generate_answer 
 from sample_papers import sample_paper_reviews
 from acl_review_guidelines import review_guidelines
 from data_loader.dataset_loader import load_arr_emnlp_dataset
+from data_loader.utils import load_existing_outputs
 
 logger = logging.getLogger("LLM-only-generation-Pipeline")
 # Setup logging
@@ -19,49 +21,61 @@ def main():
 
     # Step 1: Load dataset
     dataset = load_arr_emnlp_dataset("./data/ARR-EMNLP", llm=llm, rag_eval=False)
-
     print(f"✅ Loaded dataset with {len(dataset)} entries.")
+
+    existing_outputs = load_existing_outputs("./llm_only_pipeline/output.json")
+    logger.info(f"Loaded {len(existing_outputs)} existing outputs from rag_pipeline/output.json.")
 
     # Step 2: Generate LLM reviews for each paper
     for paper in dataset:
         doc = paper["docling_paper"]
 
-        if not paper["metadata"].get("abstract"):
-            logger.warning(f"Skipping paper {paper['paper_id']} without abstract.")
+        paper_id = paper["paper_id"]
+
+        if paper_id in existing_outputs:
+            logger.info(f"Skipping already processed paper: {paper_id}")
             continue
 
-        prompt = build_review_prompt(
-            paper={
-                "title": paper["metadata"].get("title", "[no title]"),
-                "abstract": paper["metadata"].get("abstract", ""),
-                "full_text": doc.get("full_text", "")
-            },
-            guidelines=review_guidelines,
-            sample_reviews=sample_paper_reviews
-        )
+        else: 
 
-        # Generate and store review
-        try:
-            raw_review = llm.generate_text([
-                {"role": "system", "content": "You are an academic peer reviewer."},
-                {"role": "user", "content": prompt}
-            ])
+            logger.info(f"Processing paper: {paper_id}")
 
-            # Remove Markdown code block if present
-            if raw_review.strip().startswith("```json"):
-                raw_review = re.sub(r"^```json\s*", "", raw_review.strip())  # remove leading ```json
-                raw_review = re.sub(r"\s*```$", "", raw_review.strip()) # remove trailing ```
-            
-            # UNCOMMENT FOR DEBUGGING
-            # print("\n📦 Raw LLM Output:")
-            # print(raw_review)
+            if not paper["metadata"].get("abstract"):
+                logger.warning(f"Skipping paper {paper['paper_id']} without abstract.")
+                continue
 
-            parsed_review = json.loads(raw_review)
-            paper["llm_generated_review"] = parsed_review
+            prompt = build_review_prompt(
+                paper={
+                    "title": paper["metadata"].get("title", "[no title]"),
+                    "abstract": paper["metadata"].get("abstract", ""),
+                    "full_text": doc.get("full_text", "")
+                },
+                guidelines=review_guidelines,
+                sample_reviews=sample_paper_reviews
+            )
 
-        except Exception as e:
-            logger.error(f"Failed to generate review for {paper['paper_id']}: {e}")
-            paper["llm_generated_review"] = None
+            # Generate and store review
+            try:
+                raw_review = llm.generate_text([
+                    {"role": "system", "content": "You are an academic peer reviewer."},
+                    {"role": "user", "content": prompt}
+                ])
+
+                # Remove Markdown code block if present
+                if raw_review.strip().startswith("```json"):
+                    raw_review = re.sub(r"^```json\s*", "", raw_review.strip())  # remove leading ```json
+                    raw_review = re.sub(r"\s*```$", "", raw_review.strip()) # remove trailing ```
+                
+                # UNCOMMENT FOR DEBUGGING
+                # print("\n📦 Raw LLM Output:")
+                # print(raw_review)
+
+                parsed_review = json.loads(raw_review)
+                paper["llm_generated_review"] = parsed_review
+
+            except Exception as e:
+                logger.error(f"Failed to generate review for {paper['paper_id']}: {e}")
+                paper["llm_generated_review"] = None
 
     # Step 3: Pretty print human vs LLM reviews
     for paper in dataset:
@@ -86,6 +100,15 @@ def main():
         else:
             logger.error("Failed to generate review.")
         print("=" * 80)
+
+    # Step 4: Save dataset to JSON file for further processing
+
+    os.makedirs("llm_only_pipeline", exist_ok=True)
+
+    with open("llm_only_pipeline/output.json", "w", encoding="utf-8") as f:
+        json.dump(dataset, f, indent=2, ensure_ascii=False)
+
+    logger.info("✅ Dataset saved to rag_pipeline/output.json")
 
 
 if __name__ == "__main__":
