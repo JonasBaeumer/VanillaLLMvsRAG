@@ -1,0 +1,23 @@
+# Core libraries
+openai>=1.0.0
+chromadb>=0.4.15
+tqdm==4.67.1
+python-dotenv==1.1.0
+numpy==1.26.4
+pandas==2.3.0
+scipy==1.16.0
+
+# BLEURT
+tensorflow-macos==2.12.0
+tf-slim==1.1.0
+sentencepiece==0.2.0
+bleurt @ git+https://github.com/google-research/bleurt.git
+
+# BLANC (installed without deps)
+torch==2.1.0
+nltk==3.9.1
+transformers==4.30.2
+blanc @ git+https://github.com/PrimerAI/blanc.git
+
+# Logging
+loguru==0.7.3

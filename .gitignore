@@ -15,3 +15,16 @@ chroma_db/*/*.pkl
 chroma_db/f3140815-3eaf-4d96-ba10-beb0cc496219/length.bin
 chroma_db/chroma.sqlite3
 /data_loader/__pycache__/Data 
+# System files
+*.DS_Store
+
+# Virtual environments
+.venv*/
+venv/
+
+# Model checkpoints
+bleurt_checkpoints/
+
+# Output files
+llm_only_pipeline/output.json
+rag_pipeline/output.json
