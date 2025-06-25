@@ -1,5 +1,6 @@
 import random
 import logging
+import json
 import re
 from evaluation.llm_judge.judge_review_prompt import get_judge_review_prompt
 from models.openai_models import OpenAILLM
@@ -37,13 +38,15 @@ class EloEngine:
         self.ratings[player_a] += self.k * (score_a - expected_a)
         self.ratings[player_b] += self.k * (score_b - expected_b)
 
-    def log_round(self, round_number, a, b, result):
-        self.history.append({
+    def log_round(self, round_number, contestant_a, contestant_b, result, judge_info):
+        round_record = {
             "round": round_number,
-            "contestants": [a, b],
+            "contestants": [contestant_a, contestant_b],
             "winner": result,
-            "ratings": {k: round(v, 2) for k, v in self.ratings.items()}
-        })
+            "ratings": self.ratings.copy(),
+            "judging_feedback": judge_info
+        }
+        self.history.append(round_record)
 
     def judge(self, review_a, review_b, paper_title, paper_abstract, paper_text):
         prompt = get_judge_review_prompt(
@@ -58,19 +61,28 @@ class EloEngine:
             {"role": "user", "content": prompt}
         ])
 
-        # Parse result: look for the majority choice across criteria
-        counts = {"0": 0, "1": 0, "2": 0}
-        for tag in ["clarity", "relevance", "constructiveness", "specificity", "expertise"]:
-            match = re.search(f"<{tag}>(\d)</{tag}>", response)
-            if match:
-                counts[match.group(1)] += 1
+        # Extract the reasoning
+        thinking_match = re.search(r"Your thinking process:\s*(.*?)\s*Your choice:", response, re.DOTALL)
+        thinking_process = thinking_match.group(1).strip() if thinking_match else ""
 
-        if counts["0"] > counts["1"] and counts["0"] > counts["2"]:
-            return "a"
-        elif counts["1"] > counts["0"] and counts["1"] > counts["2"]:
-            return "b"
-        else:
-            return "draw"
+        # Parse all tags
+        tags = ["clarity", "relevance", "constructiveness", "specificity", "expertise", "final_choice"]
+        parsed = {}
+        counts = {"a": 0, "b": 0, "draw": 0}
+        for tag in tags:
+            match = re.search(fr"<{tag}>\s*{{?\s*(\w+)\s*}}?</{tag}>", response)
+            if match:
+                choice = match.group(1).lower()
+                choice = "a" if choice == "0" else "b" if choice == "1" else "draw"
+                parsed[tag] = choice
+                if tag != "final_choice":  # Count only decision criteria
+                    counts[choice] += 1
+
+        winner = parsed.get("final_choice")
+        return winner, {
+            **parsed,
+            "thinking_process": thinking_process
+        }
 
     def run_tournament(self, dataset, num_rounds=10):
         for i in range(num_rounds):
@@ -90,11 +102,11 @@ class EloEngine:
             review_a = contestants[a]
             review_b = contestants[b]
 
-            result = self.judge(review_a, review_b, title, abstract, full_text)
-            result_label = "draw" if result == "draw" else a if result == "a" else b
+            winner, judge_info = self.judge(review_a, review_b, title, abstract, full_text)
+            result_label = "draw" if winner == "draw" else a if winner == "a" else b
 
             self.update_ratings(a, b, result_label)
-            self.log_round(i + 1, a, b, result_label)
+            self.log_round(i + 1, a, b, result_label, judge_info)
 
         if self.normalize:
             self._normalize_ratings()
