@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 def load_existing_outputs(path: str) -> dict:
     if os.path.exists(path):
+        if os.path.getsize(path) == 0:
+            print(f"⚠️  Existing output file at {path} is empty. Returning empty dict.")
+            return {}
         with open(path, "r") as f:
             return {entry["paper_id"]: entry for entry in json.load(f)}
     return {}

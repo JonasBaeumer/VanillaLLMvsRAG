@@ -24,7 +24,7 @@ def build_review_prompt(paper: dict, guidelines: str, sample_reviews: str) -> st
     📝 Example Review (for format and tone only — unrelated to this paper):
     {sample_reviews}
 
-    Now, please write a review following the guidelines. Return the review in JSON format with fields:
+    Now, please write a review following the guidelines. Return only the review in valid JSON format with fields:
     - paper_summary
     - summary_of_strenghts
     - summary_of_weaknesses

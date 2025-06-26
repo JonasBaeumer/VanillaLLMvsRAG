@@ -1,6 +1,11 @@
 import json
+import os
 from pathlib import Path
 from models.openai_models import OpenAILLM
+import xml.etree.ElementTree as ET
+from typing import Dict, List
+import logging
+import xml.etree.ElementTree as ET
 from .utils import (
     convert_docling_json_to_markdown,
     split_markdown_sections,
@@ -8,6 +13,138 @@ from .utils import (
     extract_titles_with_llm)
 
 llm = OpenAILLM(model_name="gpt-4o")
+logger = logging.getLogger(__name__)
+
+
+def extract_markdown_from_div(div, ns):
+    head = div.find("tei:head", ns)
+    paragraphs = div.findall(".//tei:p", ns)
+
+    heading = head.text.strip() if head is not None and head.text else None
+    para_texts = [p.text.strip() for p in paragraphs if p.text]
+
+    # if heading:
+        # print(f"✅ Found section heading: {heading}")
+    # else:
+        # print("⚠️  Section has no heading")
+
+    # print(f"📄 Found {len(para_texts)} paragraph(s)")
+
+    markdown_parts = []
+    if heading:
+        markdown_parts.append(f"## {heading}")
+    markdown_parts.extend(para_texts)
+
+    return "\n\n".join(markdown_parts)
+
+def extract_references_from_tei(tree):
+    namespace = {'tei': 'http://www.tei-c.org/ns/1.0'}
+    refs_md = []
+
+    # Broaden the XPath to pick up all biblStruct in the back matter
+    bibl_nodes = tree.findall(".//tei:back//tei:biblStruct", namespace)
+    logger.info(f"📚 Found {len(bibl_nodes)} bibliography entries")
+
+    for bibl in bibl_nodes:
+        # Authors
+        author_elems = bibl.findall(".//tei:author/tei:persName", namespace)
+        authors = []
+        for pers in author_elems:
+            forename = pers.find("tei:forename", namespace)
+            surname = pers.find("tei:surname", namespace)
+            name = ""
+            if forename is not None and forename.text:
+                name += forename.text
+            if surname is not None and surname.text:
+                name += " " + surname.text
+            if name:
+                authors.append(name.strip())
+        author_str = " & ".join(authors) if authors else "Unknown Author"
+
+        # Title
+        title_elem = bibl.find(".//tei:title[@level='a']", namespace) or bibl.find(".//tei:title", namespace)
+        title = title_elem.text.strip() if title_elem is not None and title_elem.text else "Untitled"
+
+        # Year
+        year_elem = bibl.find(".//tei:date", namespace)
+        year = year_elem.attrib.get("when", "") if year_elem is not None else ""
+
+        # Journal/Publisher (if any)
+        source = ""
+        monogr = bibl.find(".//tei:monogr", namespace)
+        if monogr is not None:
+            journal_elem = monogr.find(".//tei:title[@level='j']", namespace)
+            if journal_elem is not None and journal_elem.text:
+                source = journal_elem.text.strip()
+
+        # Compose markdown
+        ref_md = f"- **{author_str}** ({year}). *{title}*"
+        if source:
+            ref_md += f". {source}"
+        refs_md.append(ref_md)
+
+    if not refs_md:
+        logger.warning("⚠️ No valid references were extracted.")
+    else:
+        logger.info(f"✅ Extracted {len(refs_md)} reference entries.")
+        # for ref in refs_md[:2]:  # Show a preview (debugging)
+            # print("📝", ref)
+
+    # Optional: debug back divs
+    # back_divs = tree.findall(".//tei:back//tei:div", namespace)
+    # for div in back_divs:
+        # print("📘 back div type:", div.attrib.get("type"))
+
+    return "\n".join(refs_md)
+
+def tei_to_docklink_style_dict(file_path):
+    if not os.path.exists(file_path):
+        logger.error(f"❌ File not found: {file_path}")
+        return {}
+
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+    except Exception as e:
+        logger.error(f"❌ Failed to parse TEI XML: {e}")
+        return {}
+
+    ns = {"tei": "http://www.tei-c.org/ns/1.0"}
+
+    title_el = root.find(".//tei:titleStmt/tei:title", ns)
+    author_els = root.findall(".//tei:author", ns)
+    divs = root.findall(".//tei:text//tei:div", ns)
+    references_markdown = extract_references_from_tei(root)
+
+    logger.info(f"📌 Found title: {title_el.text if title_el is not None else 'None'}")
+
+    title = title_el.text.strip() if title_el is not None else ""
+    authors = []
+
+    all_markdown_sections = []
+    references_section = ""
+
+    for i, div in enumerate(divs):
+        heading = div.find("tei:head", ns)
+        heading_text = heading.text.strip().lower() if heading is not None and heading.text else ""
+
+        # print(f"\n🔹 Processing div #{i+1}: {heading_text if heading_text else '[no heading]'}")
+
+        markdown = extract_markdown_from_div(div, ns)
+
+        if "reference" in heading_text or "bibliography" in heading_text:
+            references_section += markdown + "\n\n"
+        else:
+            all_markdown_sections.append(markdown)
+
+    full_text = "\n\n".join(all_markdown_sections).strip()
+
+    return {
+        "title": title,
+        "authors": authors,
+        "text": full_text,
+        "references_markdown": references_markdown.strip()
+    }
 
 def extract_docling_paper(docling_data: dict) -> dict:
     """Convert a Docling JSON paper to a simple dict.
@@ -41,43 +178,8 @@ def extract_docling_paper(docling_data: dict) -> dict:
         "references_markdown": references_markdown,
     }
 
-
 # ---------------------------------------------------------------------------
-# Reviews helpers (unchanged except for minor style tweaks)
-# ---------------------------------------------------------------------------
-
-def format_reviews(reviews_data):
-    formatted_reviews = []
-    for review in reviews_data:
-        r = review.get("report", {})
-        scores = review.get("scores", {})
-        meta = review.get("meta", {})
-
-        formatted_reviews.append(
-            {
-                "reviewer_id": review.get("rid", "[unknown]"),
-                "topic_and_contributions": r.get("paper_topic_and_main_contributions", ""),
-                "reasons_to_accept": r.get("reasons_to_accept", ""),
-                "reasons_to_reject": r.get("reasons_to_reject", ""),
-                "questions_for_authors": r.get("questions_for_the_authors", ""),
-                "missing_references": r.get("missing_references", ""),
-                "typos_and_style": r.get(
-                    "typos_grammar_style_and_presentation_improvements", ""
-                ),
-                "ethical_concerns": r.get("ethical_concerns", ""),
-                "scores": {
-                    "soundness": scores.get("soundness", ""),
-                    "excitement": scores.get("excitement", ""),
-                    "reproducibility": scores.get("reproducibility", ""),
-                },
-                "reviewer_confidence": meta.get("reviewer_confidence", ""),
-            }
-        )
-    return formatted_reviews
-
-
-# ---------------------------------------------------------------------------
-# Dataset loader
+# ARR-EMNLP Dataset loader
 # ---------------------------------------------------------------------------
 
 def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
@@ -92,7 +194,7 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
         paper_data = {
             "paper_id": paper_id,
             "metadata": {},
-            "docling_paper": {},
+            "tei_data": {},
             "reviews": [],
         }
 
@@ -106,19 +208,18 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
             try:
                 paper_data["metadata"] = json.loads(v1_meta.read_text())
             except json.JSONDecodeError:
-                print(f"⚠️  Skipping malformed meta.json in {paper_id}")
+                logger.warning(f"⚠️  Skipping malformed meta.json in {paper_id}")
         else:
-            print(f"⚠️  No usable meta.json in v1 for paper {paper_id}")
+            logger.warning(f"⚠️  No usable meta.json in v1 for paper {paper_id}")
 
-        # -------- paper.docling.json ----------------------------------------
-        docling_path = v1_dir / "paper.docling.json"
-        if docling_path.exists() and docling_path.stat().st_size:
+         # -------- paper.tei ----------------------------------------
+        tei_path = v1_dir / "paper.tei"
+        if tei_path.exists() and tei_path.stat().st_size:
             try:
-                paper_data["docling_paper"] = extract_docling_paper(
-                    json.loads(docling_path.read_text())
-                )
+                paper_data["tei_data"] = tei_to_docklink_style_dict(tei_path)
+                paper_data["tei_data"]["authors"] = paper_data.get("metadata", {}).get("authors", [])
             except json.JSONDecodeError:
-                print(f"⚠️  Skipping malformed docling JSON for {paper_id}")
+                logger.warning(f"⚠️  Skipping malformed docling JSON for {paper_id}")
 
         # -------- reviews.json ----------------------------------------------
         reviews_path = v1_dir / "reviews.json"
@@ -128,20 +229,50 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
                     json.loads(reviews_path.read_text())
                 )
             except json.JSONDecodeError:
-                print(f"⚠️  Skipping malformed reviews.json for {paper_id}")
+                logger.warning(f"⚠️  Skipping malformed reviews.json for {paper_id}")
 
         # -------- Extract reference titles with LLM (only for RAG evaluation) --------
 
         if rag_eval:
-            reference_block = paper_data["docling_paper"].get("references_markdown", "")
+            reference_block = paper_data["tei_data"].get("references_markdown", "")
             if reference_block:
                 titles = extract_titles_with_llm(reference_block, model=llm)
-                paper_data["docling_paper"]["reference_titles"] = titles
+                paper_data["tei_data"]["reference_titles"] = titles
 
         dataset.append(paper_data)
 
     return dataset
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def format_reviews(reviews_data):
+    formatted_reviews = []
+    for review in reviews_data:
+        r = review.get("report", {})
+        scores = review.get("scores", {})
+        meta = review.get("meta", {})
+
+        formatted_review = {
+            "reviewer_id": review.get("rid", "[unknown]"),
+            "paper_summary": r.get("paper_summary", ""),
+            "summary_of_strengths": r.get("summary_of_strengths", ""),
+            "summary_of_weaknesses": r.get("summary_of_weaknesses", ""),
+            "comments_suggestions_and_typos": r.get("comments_suggestions_and_typos", ""),
+            "ethical_concerns": r.get("ethical_concerns", ""),
+            "scores": {
+                "soundness": scores.get("soundness", None),
+                "overall_assessment": scores.get("overall_assessment", None),
+                "datasets": scores.get("datasets", None),
+                "software": scores.get("software", None),
+                "best_paper": scores.get("best_paper", "")
+            },
+            "reviewer_confidence": meta.get("confidence", None)
+        }
+
+        formatted_reviews.append(formatted_review)
+    return formatted_reviews
 
 # ---------------------------------------------------------------------------
 # Quick CLI for sanity‑checking

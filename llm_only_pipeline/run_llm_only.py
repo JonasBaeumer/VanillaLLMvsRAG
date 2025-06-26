@@ -1,5 +1,6 @@
 import logging
 import json
+from json import JSONDecodeError
 import os
 import re
 from llm_only_pipeline.prompt_templates import LLM_ONLY_TEMPLATE_V1
@@ -12,7 +13,6 @@ from data_loader.dataset_loader import load_arr_emnlp_dataset
 from data_loader.utils import load_existing_outputs
 
 logger = logging.getLogger("LLM-only-generation-Pipeline")
-# Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 def main():
@@ -21,14 +21,17 @@ def main():
 
     # Step 1: Load dataset
     dataset = load_arr_emnlp_dataset("./data/ARR-EMNLP", llm=llm, rag_eval=False)
-    print(f"✅ Loaded dataset with {len(dataset)} entries.")
+    logger.info(f"✅ Loaded dataset with {len(dataset)} entries.")
 
     existing_outputs = load_existing_outputs("./llm_only_pipeline/output.json")
     logger.info(f"Loaded {len(existing_outputs)} existing outputs from rag_pipeline/output.json.")
 
+    # Only pass down papers that we were able to process
+    completed_papers = []
+
     # Step 2: Generate LLM reviews for each paper
     for paper in dataset:
-        doc = paper["docling_paper"]
+        doc = paper["tei_data"]
 
         paper_id = paper["paper_id"]
 
@@ -72,13 +75,18 @@ def main():
 
                 parsed_review = json.loads(raw_review)
                 paper["llm_generated_review"] = parsed_review
+                completed_papers.append(paper)
+
+            except JSONDecodeError as e:
+                logger.error(f"❌ Failed to decode JSON for paper {paper_id}: {e}")
 
             except Exception as e:
                 logger.error(f"Failed to generate review for {paper['paper_id']}: {e}")
                 paper["llm_generated_review"] = None
-
-    # Step 3: Pretty print human vs LLM reviews
-    for paper in dataset:
+    
+    """
+    # Step 3: Pretty print human vs LLM reviews (only when debugging)
+    for paper in completed_papers:
         doc = paper["docling_paper"]
         title = paper["metadata"].get("title", "[No Title]")
         human_reviews = paper["reviews"]
@@ -100,13 +108,13 @@ def main():
         else:
             logger.error("Failed to generate review.")
         print("=" * 80)
-
+    """
     # Step 4: Save dataset to JSON file for further processing
 
     os.makedirs("llm_only_pipeline", exist_ok=True)
 
     with open("llm_only_pipeline/output.json", "w", encoding="utf-8") as f:
-        json.dump(dataset, f, indent=2, ensure_ascii=False)
+        json.dump(completed_papers, f, indent=2, ensure_ascii=False)
 
     logger.info("✅ Dataset saved to rag_pipeline/output.json")
 

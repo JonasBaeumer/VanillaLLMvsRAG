@@ -15,8 +15,7 @@ from models.openai_models import OpenAILLM
 from sample_papers import sample_paper_reviews
 import os
 
-logger = logging.getLogger("openalex-loader")
-# Configure logging
+logger = logging.getLogger("LLM-RAG-generation-Pipeline")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 def main():
@@ -37,7 +36,7 @@ def main():
     papers_to_be_embedded = []
 
     for paper in dataset:
-        doc = paper["docling_paper"]
+        doc = paper["tei_data"]
         paper_id = paper["paper_id"]
 
         if paper_id in existing_outputs:
@@ -72,7 +71,7 @@ def main():
 
     # Step 4: Generate LLM reviews with RAG
     for paper in dataset:
-        doc = paper["docling_paper"]
+        doc = paper["tei_data"]
 
         if not paper["metadata"].get("abstract"):
             logger.warning(f"Skipping paper {paper['paper_id']} without abstract.")
@@ -115,10 +114,11 @@ def main():
             paper["llm_plus_rag_generated_review"] = parsed_review
 
         except Exception as e:
-            logger.error(f"Failed to generate review for {paper['paper_id']}: {e}")
+            logger.error(f"❌ Failed to generate review for {paper['paper_id']}: {e}")
             paper["llm_generated_review"] = None
 
-    # Step 4: Pretty print results
+    """
+    # Step 4: Pretty print results (only when debugging)
     for paper in dataset:
         title = paper["metadata"].get("title", "[No Title]")
         human_reviews = paper.get("reviews", [])
@@ -152,6 +152,7 @@ def main():
             print("❌ No context retrieved.")
 
         print("=" * 100)
+    """
     
     logger.info("Writing file content to json file...")
 

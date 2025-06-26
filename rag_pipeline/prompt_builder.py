@@ -7,7 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 def build_review_prompt(paper: dict, guidelines: str, sample_reviews: str, context_chunks: List[str]) -> str:
-    context_text = "\n\n".join(context_chunks) if context_chunks else ""
+    if any(chunk is None for chunk in context_chunks):
+        print("⚠️ Warning: One or more context chunks were None and replaced with an empty string.")
+
+    context_text = "\n\n".join(chunk or "" for chunk in context_chunks)
 
     return f"""
     You are a peer reviewer for an academic conference. Your task is to write a constructive, well-structured peer review based on the provided paper, using the journal’s review guidelines and the example review for inspiration.
