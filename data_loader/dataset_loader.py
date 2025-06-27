@@ -7,7 +7,6 @@ from typing import Dict, List
 import logging
 import xml.etree.ElementTree as ET
 from .utils import (
-    convert_docling_json_to_markdown,
     split_markdown_sections,
     get_title_and_authors_from_furniture,
     extract_titles_with_llm)
@@ -212,7 +211,7 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
         else:
             logger.warning(f"⚠️  No usable meta.json in v1 for paper {paper_id}")
 
-         # -------- paper.tei ----------------------------------------
+        # -------- paper.tei --------------------------------------------------
         tei_path = v1_dir / "paper.tei"
         if tei_path.exists() and tei_path.stat().st_size:
             try:
@@ -231,8 +230,12 @@ def load_arr_emnlp_dataset(base_path, llm: OpenAILLM = None, rag_eval=False):
             except json.JSONDecodeError:
                 logger.warning(f"⚠️  Skipping malformed reviews.json for {paper_id}")
 
-        # -------- Extract reference titles with LLM (only for RAG evaluation) --------
+        # ❗ Skip if no reviews are present
+        if not paper_data["reviews"]:
+            logger.warning(f"⚠️  No reviews found for paper {paper_id}, skipping entry.")
+            continue
 
+        # -------- Extract reference titles with LLM (only for RAG evaluation) --------
         if rag_eval:
             reference_block = paper_data["tei_data"].get("references_markdown", "")
             if reference_block:

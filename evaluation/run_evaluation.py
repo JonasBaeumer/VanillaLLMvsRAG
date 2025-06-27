@@ -28,7 +28,7 @@ if __name__ == "__main__":
     scored_data = run_traditional_metrics(merged_data)
     print("✅ Traditional metrics scoring completed.")
 
-    results = run_llm_judge_pipeline(merged_data, num_rounds=1)
+    results = run_llm_judge_pipeline(merged_data, num_rounds=10)
 
     os.makedirs("evaluation", exist_ok=True)
 

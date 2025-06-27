@@ -8,13 +8,10 @@ logger = logging.getLogger(__name__)
 def extract_review_text(review_obj: dict) -> str:
     """Concatenates all important fields into a single reference string."""
     parts = [
-        review_obj.get("topic_and_contributions", ""),
-        review_obj.get("reasons_to_accept", ""),
-        review_obj.get("reasons_to_reject", ""),
-        review_obj.get("questions_for_authors", ""),
-        review_obj.get("missing_references", ""),
-        review_obj.get("typos_and_style", ""),
-        review_obj.get("ethical_concerns", "")
+        review_obj.get("paper_summary", ""),
+        review_obj.get("summary_of_strengths", ""),
+        review_obj.get("summary_of_weaknesses", ""),
+        review_obj.get("comments_suggestions_and_typos", ""),
     ]
     return " ".join(part.strip() for part in parts if part.strip())
 

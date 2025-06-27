@@ -70,13 +70,15 @@ class EloEngine:
         parsed = {}
         counts = {"a": 0, "b": 0, "draw": 0}
         for tag in tags:
-            match = re.search(fr"<{tag}>\s*{{?\s*(\w+)\s*}}?</{tag}>", response)
+            match = re.search(fr"<{tag}>\s*{{\s*(a|b)\s*}}\s*</{tag}>", response, re.IGNORECASE)
             if match:
                 choice = match.group(1).lower()
-                choice = "a" if choice == "0" else "b" if choice == "1" else "draw"
                 parsed[tag] = choice
-                if tag != "final_choice":  # Count only decision criteria
+                if tag != "final_choice":
                     counts[choice] += 1
+            else:
+                logger.warning(f"⚠️ Could not parse tag <{tag}> correctly. Setting to 'invalid'. Full response:\n{response}")
+                parsed[tag] = "invalid"
 
         winner = parsed.get("final_choice")
         return winner, {
@@ -90,13 +92,13 @@ class EloEngine:
 
             # Prepare contestants
             contestants = {
-                "human_review": self._sample_human_review(entry["reviews"]),
+                "human_review": self._sample_human_review(entry, entry["reviews"]),
                 "llm_only": entry["llm_generated_review"],
                 "rag_pipeline": entry["llm_plus_rag_generated_review"],
             }
-            title = entry["docling_paper"].get("title", "[no title]")
+            title = entry["metadata"].get("title", "[no title]")
             abstract = entry["metadata"].get("abstract", "")
-            full_text = entry["docling_paper"].get("full_text", "")
+            full_text = entry["tei_data"].get("full_text", "")
 
             a, b = random.sample(list(contestants.keys()), 2)
             review_a = contestants[a]
@@ -116,9 +118,23 @@ class EloEngine:
             "elo_rounds": self.history,
         }
 
-    def _sample_human_review(self, entry):
+    def _sample_human_review(self, full_entry, entry):
+        if not entry:
+            logger.warning(f"⚠️ No human reviews available for this entry {full_entry['paper_id']}. Skipping.")
+            return "[NO HUMAN REVIEW AVAILABLE]"
+
         review = random.choice(entry)
-        return review["topic_and_contributions"] + " " + review["reasons_to_accept"] + " " + review["reasons_to_reject"] + " " + review["typos_and_style"] + " " + review["scores"].get("soundness", "") + " " + review["scores"].get("overall_assessment", "")
+        selected_review = {
+            "paper_summary": review["paper_summary"],
+            "summary_of_strengths": review["summary_of_strengths"],
+            "summary_of_weaknesses":review["summary_of_weaknesses"],
+            "comments_suggestions_and_typos": review["comments_suggestions_and_typos"],
+            "scores": {
+                "soundness": str(review["scores"].get("soundness", "")),
+                "overall_assessment": str(review["scores"].get("overall_assessment", ""))
+            }
+        }
+        return selected_review
 
     def _normalize_ratings(self):
         mean_rating = sum(self.ratings.values()) / len(self.ratings)
@@ -156,7 +172,7 @@ if __name__ == "__main__":
             ],
             "llm_generated_review": "This paper has solid empirical results but lacks theoretical rigor.",
             "llm_plus_rag_generated_review": "Strong in experiments, outlines valuable contributions.",
-            "docling_paper": {
+            "tei_data": {
                 "title": "Reinforcement Learning for Robotics",
                 "full_text": (
                     "This paper investigates the application of reinforcement learning (RL) techniques in the context of robotics. "

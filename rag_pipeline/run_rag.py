@@ -115,7 +115,7 @@ def main():
 
         except Exception as e:
             logger.error(f"❌ Failed to generate review for {paper['paper_id']}: {e}")
-            paper["llm_generated_review"] = None
+            paper["llm_plus_rag_generated_review"] = None
 
     """
     # Step 4: Pretty print results (only when debugging)

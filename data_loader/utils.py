@@ -2,7 +2,6 @@ import re
 import json
 import tempfile
 from pathlib import Path
-from docling.document_converter import DocumentConverter
 from models.openai_models import OpenAILLM
 import os
 import logging
@@ -20,18 +19,7 @@ def load_existing_outputs(path: str) -> dict:
     return {}
 
 
-def convert_docling_json_to_markdown(docling_json: dict) -> str:
-    """Return a markdown export of a Docling JSON blob."""
-    # Write to tmp so the converter can read a path
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
-        json.dump(docling_json, tmp)
-        tmp_path = Path(tmp.name)
 
-    converter = DocumentConverter()
-    md_text = converter.convert(tmp_path).document.export_to_markdown()
-
-    tmp_path.unlink(missing_ok=True)
-    return md_text
 
 
 def split_markdown_sections(md: str) -> list[dict]:

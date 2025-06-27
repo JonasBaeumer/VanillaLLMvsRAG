@@ -24,7 +24,7 @@ def main():
     logger.info(f"✅ Loaded dataset with {len(dataset)} entries.")
 
     existing_outputs = load_existing_outputs("./llm_only_pipeline/output.json")
-    logger.info(f"Loaded {len(existing_outputs)} existing outputs from rag_pipeline/output.json.")
+    logger.info(f"Loaded {len(existing_outputs)} existing outputs from llm_only_pipeline/output.json.")
 
     # Only pass down papers that we were able to process
     completed_papers = []

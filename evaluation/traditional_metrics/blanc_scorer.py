@@ -2,11 +2,12 @@ import logging
 import torch
 from blanc import BlancHelp
 import nltk
+# Monkey patch BLANC if it's trying to load non-existent 'punkt_tab'
+from nltk import tokenize
 from nltk.tokenize import sent_tokenize, PunktSentenceTokenizer
 nltk.download("punkt", quiet=True)
 
-# Monkey patch BLANC if it's trying to load non-existent 'punkt_tab'
-from nltk import tokenize
+
 tokenize.PunktTokenizer = lambda *args, **kwargs: PunktSentenceTokenizer()
 
 logger = logging.getLogger(__name__)
