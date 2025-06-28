@@ -6,7 +6,7 @@ from rag_pipeline.prompt_templates import RAG_TEMPLATE_V1
 from chroma_db.chroma import initiate_chroma_db
 from data_loader.dataset_loader import load_arr_emnlp_dataset
 from data_loader.openalex_loader import fetch_abstracts_for_titles, store_openalex_papers_in_vector_db
-from data_loader.utils import load_existing_outputs
+from data_loader.utils import load_existing_outputs, parse_review_json
 from rag_pipeline.prompt_builder import build_review_prompt
 from acl_review_guidelines import review_guidelines
 import logging
@@ -110,7 +110,7 @@ def main():
                 raw_review = re.sub(r"^```json\s*", "", raw_review.strip())
                 raw_review = re.sub(r"\s*```$", "", raw_review.strip())
 
-            parsed_review = json.loads(raw_review)
+            parsed_review = parse_review_json(raw_review, paper_id)
             paper["llm_plus_rag_generated_review"] = parsed_review
 
         except Exception as e:

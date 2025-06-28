@@ -10,7 +10,7 @@ from models.generator import generate_answer
 from sample_papers import sample_paper_reviews
 from acl_review_guidelines import review_guidelines
 from data_loader.dataset_loader import load_arr_emnlp_dataset
-from data_loader.utils import load_existing_outputs
+from data_loader.utils import load_existing_outputs, parse_review_json
 
 logger = logging.getLogger("LLM-only-generation-Pipeline")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -73,7 +73,7 @@ def main():
                 # print("\n📦 Raw LLM Output:")
                 # print(raw_review)
 
-                parsed_review = json.loads(raw_review)
+                parsed_review = parse_review_json(raw_review, paper_id)
                 paper["llm_generated_review"] = parsed_review
                 completed_papers.append(paper)
 

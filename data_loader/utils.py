@@ -19,9 +19,6 @@ def load_existing_outputs(path: str) -> dict:
     return {}
 
 
-
-
-
 def split_markdown_sections(md: str) -> list[dict]:
     """Split markdown into sections based on ATX headings (one or more #).
 
@@ -97,3 +94,26 @@ def extract_titles_with_llm(reference_block: str, model: OpenAILLM) -> list[str]
     except Exception as e:
         logger.error(f"❌ Failed to extract titles with LLM: {e}")
         return []
+    
+
+import json
+import re
+
+def parse_review_json(response, paper_id):
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        logger.warning(f"🔧 Attempting to fix malformed JSON for paper {paper_id}...")
+
+        # Remove markdown formatting if present
+        response = response.strip().removeprefix("```json").removesuffix("```").strip()
+
+        # Try to fix single quotes to double quotes (risky, but can work in controlled prompts)
+        response = re.sub(r"(?<!\\)'", '"', response)
+
+        # Try parsing again
+        try:
+            return json.loads(response)
+        except Exception as e:
+            logger.error(f"❌ Final JSON parse failed for paper {paper_id}: {e}")
+            return None
