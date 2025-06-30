@@ -36,7 +36,12 @@ def retrieve_context(collection: Collection, query_embedding: List[float], k: in
         # Extract documents
         context_chunks = [item["document"] for item in similar_items]
 
+        # Count how many of the retrieved items were chunks
+        chunk_count = sum(1 for item in similar_items if item["metadata"].get("chunk_index") is not None)
         logger.info("Retrieved %d context chunks from Chroma.", len(context_chunks))
+        
+        # Log how many out of the retrieved items were chunks
+        logger.info("Out of %d retrieved items, %d were valid chunks.", len(similar_items), chunk_count)
         for i, item in enumerate(similar_items):
             logger.debug(f"Chunk {i+1}: ID={item['id']} | Distance={item['distance']:.4f}")
 
