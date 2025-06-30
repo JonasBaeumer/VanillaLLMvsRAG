@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from data_loader.constants import OPENALEX_WORKS_ENDPOINT
 from models.openai_models import OpenAIEmbeddingModel
 from chroma_db.chroma import store_multiple_items, initiate_chroma_db
+from data_loader.arxiv_loader import fetch_and_chunk_arxiv_full_text
 import logging
 import os
 
@@ -60,19 +61,34 @@ def fetch_abstracts_for_titles(titles: List[str]) -> List[Dict[str, Any]]:
     """
     Given a list of paper titles, fetch metadata and abstracts from OpenAlex.
 
+    If possible, retrieve the full text from arxiv based on the rectrieved OpenAlex metadata.
+
     Returns a list of dicts with 'title', 'abstract', and optional metadata.
     Logs how many papers could not be retrieved.
     """
     found = []
     not_found = []
+    found_full_text = []
 
     for title in titles:
         metadata = fetch_openalex_abstract(title)
         if metadata:
+
+            full_text_chunked = []
+
+            # Check if the paper is available on arXiv
+            if metadata['primary_location']['source'].get("display_name") == "arXiv (Cornell University)":
+                oa_url = metadata['open_access'].get('oa_url', {})
+                # Check if the OA URL is available
+                if oa_url:
+                    full_text_chunked = fetch_and_chunk_arxiv_full_text(oa_url)
+                    found_full_text.append(title)
+
             found.append({
                 "input_title": title,
                 "matched_title": metadata.get("title", ""),
                 "abstract": decode_abstract(metadata.get("abstract", {})),
+                "full_text_chunked": full_text_chunked,
                 "id": metadata.get("id", ""),
                 "doi": metadata.get("doi", ""),
                 "publication_year": metadata.get("publication_year", ""),
@@ -82,6 +98,7 @@ def fetch_abstracts_for_titles(titles: List[str]) -> List[Dict[str, Any]]:
             not_found.append(title)
 
     logging.info(f"🔍 {len(found)} / {len(titles)} papers found on OpenAlex.")
+    logging.info(f"📄 {len(found_full_text)} / {len(found)} found papers papers have full text available on arXiv.")
     if not_found:
         logging.warning(f"⚠️ Could not find {len(not_found)} paper(s):")
         for nf in not_found:

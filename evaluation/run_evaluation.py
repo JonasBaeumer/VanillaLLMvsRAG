@@ -4,6 +4,7 @@ import os
 from evaluation.loader import load_json, merge_llm_reviews
 from evaluation.traditional_metrics.runner import run_traditional_metrics
 from evaluation.llm_judge.runner import run_llm_judge_pipeline
+from evaluation.util import filter_complete_entries
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -24,16 +25,19 @@ if __name__ == "__main__":
     merged_data = merge_llm_reviews(rag_data, llm_data)
     print("✅ Merged LLM-only reviews into RAG data.")
 
+    # Step 3: Keep only entries where all required fields are present
+    validated_data = filter_complete_entries(merged_data)
+
     # Step 3: Traditional Metrics Scoring
-    scored_data = run_traditional_metrics(merged_data)
+    scored_data = run_traditional_metrics(validated_data)
     print("✅ Traditional metrics scoring completed.")
 
-    results = run_llm_judge_pipeline(merged_data, num_rounds=10)
+    results = run_llm_judge_pipeline(validated_data, num_rounds=len(validated_data)*3)
 
     os.makedirs("evaluation", exist_ok=True)
 
-    with open("evaluation/dataset_with_traditional_scores.json", "w", encoding="utf-8") as f:
-        json.dump(results["data"], f, indent=2, ensure_ascii=False)
+    # with open("evaluation/dataset_with_traditional_scores.json", "w", encoding="utf-8") as f:
+        # json.dump(results["data"], f, indent=2, ensure_ascii=False)
 
     logger.info("✅ Dataset saved to evaluation/dataset_with_traditional_scores.json")
 

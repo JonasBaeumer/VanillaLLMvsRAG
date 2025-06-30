@@ -38,6 +38,7 @@ def main():
     # Step 3: Retrieve papers for references and store in ChromaDB
     papers_to_be_embedded = []
 
+    # If the paper is already processed, skip it because we have already stored its referenced papers in ChromaDB
     for paper in dataset:
         doc = paper["tei_data"]
         paper_id = paper["paper_id"]

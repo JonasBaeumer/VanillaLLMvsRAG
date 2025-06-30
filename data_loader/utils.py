@@ -99,9 +99,6 @@ def extract_titles_with_llm(reference_block: str, model: OpenAILLM) -> list[str]
         return []
     
 
-import json
-import re
-
 def parse_review_json(response, paper_id):
     try:
         return json.loads(response)
@@ -120,3 +117,35 @@ def parse_review_json(response, paper_id):
         except Exception as e:
             logger.error(f"❌ Final JSON parse failed for paper {paper_id}: {e}")
             return None
+        
+
+def fix_markdown_headers(md_text):
+    # Only match lines that start with a number (optionally dotted), a space, and then a capital letter (not end of line)
+    return re.sub(
+        r'^(?:\d+(?:\.\d+)*\s+)([A-Z][^\n]+)$',
+        r'## \g<0>',
+        md_text,
+        flags=re.MULTILINE
+    )
+
+
+def chunk_markdown(md_text, max_tokens=400, overlap_tokens=50):
+    """
+    Splits a markdown text into chunks of approximately max_tokens, with overlap.
+    """
+    import re
+    sections = re.split(r'(?<=\n)(?=## )', md_text)
+    chunks = []
+    current_chunk = ""
+    for section in sections:
+        section_tokens = len(section.split())
+        if len(current_chunk.split()) + section_tokens > max_tokens:
+            if current_chunk.strip():
+                chunks.append(current_chunk.strip())
+            # Start a new chunk with overlap
+            current_chunk = " ".join(current_chunk.split()[-overlap_tokens:]) + " " + section.strip()
+        else:
+            current_chunk += "\n" + section.strip()
+    if current_chunk.strip():
+        chunks.append(current_chunk.strip())
+    return chunks
