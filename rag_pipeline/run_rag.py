@@ -14,11 +14,14 @@ from models.openai_models import OpenAIEmbeddingModel
 from models.openai_models import OpenAILLM
 from sample_papers import sample_paper_reviews
 import os
+import time
 
 logger = logging.getLogger("LLM-RAG-generation-Pipeline")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 def main():
+
+    start_time = time.time()
 
     # Step 0: Init models and ChromaDB collection name
     embedder = OpenAIEmbeddingModel()
@@ -164,6 +167,11 @@ def main():
         json.dump(dataset, f, indent=2, ensure_ascii=False)
 
     logger.info("✅ Dataset saved to rag_pipeline/output.json")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print(f"✅ Execution of rag_pipeline completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

@@ -68,7 +68,8 @@ class OpenAILLM(LLM):
             response = openai_client_model.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
-                temperature=0.7,
+                timeout=30,
+                temperature=0,
                 max_tokens=1024
             )
             return response.choices[0].message.content.strip()

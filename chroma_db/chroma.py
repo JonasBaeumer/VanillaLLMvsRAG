@@ -280,7 +280,6 @@ def item_exists(collection, item_id: str) -> bool:
         results = collection.get(ids=[item_id])
         # Check if first list of documents contains anything
         exists = bool(results and results['documents'] and results['documents'][0])
-        logger.info(f"Item {item_id} exists: {exists}")
         return exists
     except Exception as e:
         logger.error(f"Error checking existence of item {item_id}: {e}")

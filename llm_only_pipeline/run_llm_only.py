@@ -3,6 +3,7 @@ import json
 from json import JSONDecodeError
 import os
 import re
+import time
 from llm_only_pipeline.prompt_templates import LLM_ONLY_TEMPLATE_V1
 from llm_only_pipeline.prompt_builder import build_review_prompt
 from models.openai_models import OpenAILLM
@@ -16,6 +17,8 @@ logger = logging.getLogger("LLM-only-generation-Pipeline")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 def main():
+
+    start_time = time.time()
     # Step 0: Init LLM model
     llm = OpenAILLM()
 
@@ -117,6 +120,11 @@ def main():
         json.dump(completed_papers, f, indent=2, ensure_ascii=False)
 
     logger.info("✅ Dataset saved to rag_pipeline/output.json")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print(f"✅ Execution of rag_pipeline completed in {elapsed_time:.2f} seconds.")
 
 
 if __name__ == "__main__":

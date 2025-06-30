@@ -74,6 +74,9 @@ def extract_titles_with_llm(reference_block: str, model: OpenAILLM) -> list[str]
     References:
     {reference_block}
     """
+    
+    timeout=30 
+
     try:
         response_text = model.generate_text([
             {"role": "system", "content": "You extract paper titles from scientific references."},
