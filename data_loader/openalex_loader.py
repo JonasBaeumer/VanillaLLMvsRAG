@@ -40,6 +40,8 @@ def fetch_openalex_abstract(title, delay=1.0):
         "doi": best_match.get("doi"),
         "abstract": best_match.get("abstract_inverted_index"),
         "id": best_match.get("id"),
+        "primary_location": best_match.get("primary_location", {}),
+        "open_access": best_match.get("open_access", {}),
         "publication_year": best_match.get("publication_year"),
         "authorships": best_match.get("authorships", [])
     }
@@ -120,36 +122,43 @@ def store_openalex_papers_in_vector_db(papers: list, collection_name = "papers")
     chroma = initiate_chroma_db("./chroma_db")
     collection = chroma.get_or_create_collection(collection_name)
 
-    # Filter papers with valid abstracts
-    papers_with_abstracts = [p for p in papers if p.get("abstract")]
-    if not papers_with_abstracts:
-        logger.warning("No valid abstracts found in provided paper list. Skipping embedding.")
-        return
+    items_to_store = []
 
-    logger.info(f"Preparing to embed {len(papers_with_abstracts)} papers.")
-
-    # Embed abstracts
-    abstracts = [p["abstract"] for p in papers_with_abstracts]
-    embeddings = embedder.embed_texts(abstracts)
-
-    # Prepare items for ChromaDB
-    items_to_store = [
-    {
-        "id": paper["id"],
-        "document": paper["abstract"],
-        "embedding": embedding,
-        "metadata": {
+    for paper in papers:
+        paper_id = paper["id"]
+        base_metadata = {
             "input_title": paper.get("input_title") or "",
             "matched_title": paper.get("matched_title") or "",
             "doi": paper.get("doi") or "",
             "publication_year": paper.get("publication_year") or -1,
             "authors": ", ".join(paper.get("authors") or []),
-        },
-    }
-    for paper, embedding in zip(papers, embeddings)
-]
+        }
+        # If full text chunks exist, embed and store each chunk
+        if paper.get("full_text_chunked"):
+            chunks = paper["full_text_chunked"]
+            embeddings = embedder.embed_texts(chunks)
+            for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                items_to_store.append({
+                    "id": f"{paper_id}_chunk_{idx}",
+                    "document": chunk,
+                    "embedding": embedding,
+                    "metadata": {**base_metadata, "chunk_index": idx},
+                })
+        # Otherwise, embed and store the abstract
+        elif paper.get("abstract"):
+            embedding = embedder.embed_texts([paper["abstract"]])[0]
+            items_to_store.append({
+                "id": f"{paper_id}_abstract",
+                "document": paper["abstract"],
+                "embedding": embedding,
+                "metadata": {**base_metadata, "chunk_index": -1},
+            })
 
-    logger.info(f"Storing {len(items_to_store)} embedded papers into ChromaDB.")
+    if not items_to_store:
+        logger.warning("No valid documents found in provided paper list. Skipping embedding.")
+        return
+
+    logger.info(f"Storing {len(items_to_store)} embedded documents into ChromaDB.")
     store_multiple_items(collection, items_to_store)
     logger.info("Successfully stored papers in ChromaDB.")
 
@@ -179,6 +188,6 @@ if __name__ == "__main__":
 
     # 3. Embed and store in vector DB
     logger.info("Storing papers into ChromaDB...")
-    store_openalex_papers_in_vector_db(papers, collection)
+    store_openalex_papers_in_vector_db(papers)
 
     logger.info("Done.")
