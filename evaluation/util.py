@@ -103,6 +103,43 @@ def analyse_dataset_integrity(
                 len(present_ids), len(expected_ids))
     
 
+def analyse_joint_dataset_integrity(
+    records: Iterable[Dict[str, Any]],
+    id_key: str = "paper_id",
+) -> None:
+    """
+    Check that each entry in the merged dataset has all three review fields.
+    Logs missing fields per paper_id.
+    """
+    required_fields = ["reviews", "llm_generated_review", "llm_plus_rag_generated_review"]
+    missing_by_field = {field: [] for field in required_fields}
+    missing_by_paper = {}
+
+    present_ids: List[str] = []
+
+    for idx, rec in enumerate(records):
+        pid = str(rec.get(id_key, idx))
+        present_ids.append(pid)
+        missing = [field for field in required_fields if rec.get(field) in (None, "", [])]
+        if missing:
+            missing_by_paper[pid] = missing
+            for field in missing:
+                missing_by_field[field].append(pid)
+
+    total = len(present_ids)
+    complete = total - len(missing_by_paper)
+
+    logger.info("📊 JOINT DATASET INTEGRITY CHECK")
+    for field in required_fields:
+        ids = sorted(missing_by_field[field])
+        logger.warning(
+            "⚠️  Field '%s' missing/empty for %d/%d entries: %s",
+            field, len(ids), total, ids
+        )
+    if missing_by_paper:
+        logger.warning("⚠️  Papers with missing fields: %s", missing_by_paper)
+    logger.info("✅ %d/%d entries have all required review fields.", complete, total)
+
 
 def _sort_ids_numerically(id_list):
     """Return IDs sorted as integers whenever they look like integers."""
