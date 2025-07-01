@@ -26,6 +26,9 @@ def fetch_and_chunk_arxiv_full_text(arxiv_link):
 
         # Retrieve markdown text
         arxiv_paper_text = fetch_full_text_to_memory(arxiv_link)
+        if not arxiv_paper_text:
+            logger.info(f"❌ Failed to fetch markdown text for {arxiv_link}")
+            return []
         # Trim it down to actual content (Introduction - before References/Bibliography)
         arxiv_paper_text_clean = extract_main_content(arxiv_paper_text)
         # Mark section headers with markdown syntax
@@ -69,6 +72,9 @@ def fetch_full_text_from_arxiv(arxiv_link, output_folder):
         return full_text
     except requests.RequestException as e:
         return f"Error fetching paper: {e}"
+    except Exception as e:
+        logger.warning(f"Failed to extract markdown from {pdf_url}: {e}")
+        return ""  # or return None, or skip this paper
     
 
 def fetch_full_text_to_memory(paper_id):
