@@ -79,8 +79,10 @@ def fetch_abstracts_for_titles(titles: List[str]) -> List[Dict[str, Any]]:
             full_text_chunked = []
 
             # Check if the paper is available on arXiv
-            if metadata['primary_location']['source'].get("display_name") == "arXiv (Cornell University)":
-                oa_url = metadata['open_access'].get('oa_url', {})
+            primary_location = metadata.get('primary_location') or {}
+            source = primary_location.get('source') or {}
+            if source.get("display_name") == "arXiv (Cornell University)":
+                oa_url = (metadata.get('open_access') or {}).get('oa_url', {})
                 # Check if the OA URL is available
                 if oa_url:
                     full_text_chunked = fetch_and_chunk_arxiv_full_text(oa_url)
