@@ -35,20 +35,18 @@ class BlancScorer:
         return scores
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    scorer = BlancScorer()
-
-    doc = (
-        "This paper introduces a new method for improving factual consistency in large language models. "
-        "The authors propose a co-occurrence-based strategy to select fine-tuning data. "
-        "Experimental results on the LAMA benchmark demonstrate improved performance."
-    )
-
-    review = (
-        "The paper proposes a novel method using co-occurrence statistics to improve factual consistency. "
-        "The results on the LAMA dataset show the approach is effective."
-    )
-
-    score = scorer.score([doc], [review])
-    print(f"BLANC-help score: {score[0]:.4f}")
+# if __name__ == "__main__":
+#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     logging.basicConfig(level=logging.INFO)
+#     scorer = BlancScorer()
+#     doc = (
+#         "This paper introduces a new method for improving factual consistency in large language models. "
+#         "The authors propose a co-occurrence-based strategy to select fine-tuning data. "
+#         "Experimental results on the LAMA benchmark demonstrate improved performance."
+#     )
+#     review = (
+#         "The paper proposes a novel method using co-occurrence statistics to improve factual consistency. "
+#         "The results on the LAMA dataset show the approach is effective."
+#     )
+#     score = scorer.score([doc], [review])
+#     print(f"BLANC-help score: {score[0]:.4f}")

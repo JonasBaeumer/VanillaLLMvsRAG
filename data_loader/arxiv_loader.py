@@ -117,9 +117,9 @@ def extract_main_content(text):
 
     return text[start_idx:end_idx].strip()
 
-if __name__ == "__main__":
-    # Example usage
-    arxiv_link = "https://arxiv.org/abs/1706.03762"
-    chunks = fetch_and_chunk_arxiv_full_text(arxiv_link)
-    for i, chunk in enumerate(chunks):
-        print(f"Chunk {i+1}:\n{chunk}\n")
+# if __name__ == "__main__":
+#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     arxiv_link = "https://arxiv.org/abs/1706.03762"
+#     chunks = fetch_and_chunk_arxiv_full_text(arxiv_link)
+#     for i, chunk in enumerate(chunks):
+#         print(f"Chunk {i+1}:\n{chunk}\n")

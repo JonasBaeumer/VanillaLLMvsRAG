@@ -165,31 +165,22 @@ def store_openalex_papers_in_vector_db(papers: list, collection_name = "papers")
     logger.info("Successfully stored papers in ChromaDB.")
 
 
-if __name__ == "__main__":
-    # Execute in terminal with: "python -m data_loader.openalex_loader"
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-
-    # 2️⃣ Initiate Chroma DB and collection
-    db_dir = "./chroma_db"
-    client = initiate_chroma_db(db_dir)
-    collection = client.get_or_create_collection("papers")
-
-    # 1. Define a list of paper titles to test
-    paper_titles = [
-        "Attention Is All You Need",
-        "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
-        "A Survey on Graph Neural Networks"
-    ]
-
-    logger.info("Fetching OpenAlex metadata and abstracts...")
-    papers = fetch_abstracts_for_titles(paper_titles)
-
-    if not papers:
-        logger.warning("No papers retrieved from OpenAlex. Exiting.")
-
-    # 3. Embed and store in vector DB
-    logger.info("Storing papers into ChromaDB...")
-    store_openalex_papers_in_vector_db(papers)
-
-    logger.info("Done.")
+# if __name__ == "__main__":
+#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     logging.basicConfig(level=logging.INFO)
+#     logger = logging.getLogger(__name__)
+#     db_dir = "./chroma_db"
+#     client = initiate_chroma_db(db_dir)
+#     collection = client.get_or_create_collection("papers")
+#     paper_titles = [
+#         "Attention Is All You Need",
+#         "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+#         "A Survey on Graph Neural Networks"
+#     ]
+#     logger.info("Fetching OpenAlex metadata and abstracts...")
+#     papers = fetch_abstracts_for_titles(paper_titles)
+#     if not papers:
+#         logger.warning("No papers retrieved from OpenAlex. Exiting.")
+#     logger.info("Storing papers into ChromaDB...")
+#     store_openalex_papers_in_vector_db(papers)
+#     logger.info("Done.")

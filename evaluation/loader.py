@@ -30,38 +30,22 @@ def save_json(path: str, data: List[Dict]):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-if __name__ == "__main__":
-    # Paths to your input and output files
-    rag_path = "rag_pipeline/output.json"
-    llm_only_path = "llm_only_pipeline/output.json"
-    # merged_output_path = "evaluation/merged_reviews.json"
-
-    # Step 1: Load both datasets
-    rag_data = load_json(rag_path)
-    print(f"✅ Loaded {len(rag_data)} entries from RAG output.")
-
-    llm_data = load_json(llm_only_path)
-    print(f"✅ Loaded {len(llm_data)} entries from LLM-only output.")
-
-    # Step 2: Merge
-    merged_data = merge_llm_reviews(rag_data, llm_data)
-    print("🔀 Merged LLM-only reviews into RAG data.")
-
-    # Step 3: 
-
-    # Step 3: Save
-    # save_json(merged_output_path, merged_data)
-    # print(f"📁 Saved merged dataset to: {merged_output_path}")
-
-    # Step 4: Print sample comparison
-    if merged_data:
-        sample = merged_data[0]
-        print("\n" + "=" * 100)
-        print(f"📄 Title: {sample['metadata'].get('title', '[no title]')}")
-        print("=" * 100)
-
-        print("\n🧠 LLM-Only Review:")
-        print(json.dumps(sample.get("llm_generated_review", {}), indent=2, ensure_ascii=False))
-
-        print("\n📚 LLM + RAG Review:")
-        print(json.dumps(sample.get("llm_plus_rag_generated_review", {}), indent=2, ensure_ascii=False))
+# if __name__ == "__main__":
+#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     rag_path = "rag_pipeline/output.json"
+#     llm_only_path = "llm_only_pipeline/output.json"
+#     rag_data = load_json(rag_path)
+#     print(f"✅ Loaded {len(rag_data)} entries from RAG output.")
+#     llm_data = load_json(llm_only_path)
+#     print(f"✅ Loaded {len(llm_data)} entries from LLM-only output.")
+#     merged_data = merge_llm_reviews(rag_data, llm_data)
+#     print("🔀 Merged LLM-only reviews into RAG data.")
+#     if merged_data:
+#         sample = merged_data[0]
+#         print("\n" + "=" * 100)
+#         print(f"📄 Title: {sample['metadata'].get('title', '[no title]')}")
+#         print("=" * 100)
+#         print("\n🧠 LLM-Only Review:")
+#         print(json.dumps(sample.get("llm_generated_review", {}), indent=2, ensure_ascii=False))
+#         print("\n📚 LLM + RAG Review:")
+#         print(json.dumps(sample.get("llm_plus_rag_generated_review", {}), indent=2, ensure_ascii=False))

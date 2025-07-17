@@ -47,5 +47,6 @@ def main():
             arr_emnlp_root=Path("data/ARR-EMNLP"),         
         )
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     main()

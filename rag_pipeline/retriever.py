@@ -3,7 +3,7 @@
 import logging
 from typing import List
 from chromadb.api.models.Collection import Collection
-from chroma_db.chroma import retrieve_similar_items  # your existing method
+from chroma_db.chroma import retrieve_similar_items  
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def retrieve_context(collection: Collection, query_embedding: List[float], k: in
         A list of document strings (context chunks).
     """
     try:
-        # Use your existing robust Chroma wrapper
+        # Use existing robust Chroma wrapper
         similar_items = retrieve_similar_items(collection, query_embedding, n_results=k)
 
         if not similar_items:
