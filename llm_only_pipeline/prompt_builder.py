@@ -1,9 +1,33 @@
+"""
+Prompt builder utilities for the LLM-only pipeline.
+
+This module provides functions to construct prompts for LLM-based review generation
+without retrieval-augmented context.
+"""
 import logging
 from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
 def build_review_prompt(paper: dict, guidelines: str, sample_reviews: str) -> str:
+    """
+    Build a peer review prompt for an academic paper, including guidelines, paper content,
+    and an example review (no retrieval context).
+
+    Parameters
+    ----------
+    paper : dict
+        Dictionary with keys 'title', 'abstract', and 'full_text'.
+    guidelines : str
+        Review guidelines to be followed.
+    sample_reviews : str
+        Example review for format and tone.
+
+    Returns
+    -------
+    str
+        The formatted prompt string for the LLM.
+    """
     return f"""
     You are a peer reviewer for an academic conference. Your task is to write a constructive, well-structured peer review based on the provided paper, using the journal’s review guidelines and the example review for inspiration.
 

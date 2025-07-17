@@ -1,3 +1,10 @@
+"""
+LLM-only pipeline runner script.
+
+This script runs the LLM-only review generation pipeline for academic peer review generation.
+It loads datasets, builds prompts, generates reviews using an LLM (without retrieval),
+and saves the results for further evaluation.
+"""
 import logging
 import json
 from json import JSONDecodeError
@@ -17,6 +24,10 @@ logger = logging.getLogger("LLM-only-generation-Pipeline")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 def main():
+    """
+    Main entry point for the LLM-only pipeline.
+    Loads data, generates reviews using an LLM, and saves outputs.
+    """
 
     start_time = time.time()
     # Step 0: Init LLM model
