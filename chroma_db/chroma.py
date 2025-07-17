@@ -1,3 +1,9 @@
+"""
+ChromaDB utility functions for vector storage and retrieval.
+
+This module provides helper functions to initialize, store, retrieve, update, and delete items in a ChromaDB collection.
+It is used for managing vector-based document storage and similarity search in the RAG pipeline.
+"""
 from pathlib import Path
 import logging
 import chromadb

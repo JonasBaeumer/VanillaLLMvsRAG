@@ -1,3 +1,8 @@
+"""
+ChromaDB utility functions for loading collections.
+
+This module provides helper functions to load or create persistent ChromaDB collections for vector storage.
+"""
 import chromadb
 from chromadb.config import Settings
 
