@@ -1,3 +1,9 @@
+"""
+Utility functions for data loading, markdown processing, and LLM-based extraction.
+
+This module provides helpers for loading outputs, splitting markdown, extracting titles/authors,
+parsing review JSON, and chunking markdown for downstream processing.
+"""
 import re
 import json
 import tempfile

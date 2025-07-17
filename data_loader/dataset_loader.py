@@ -1,3 +1,9 @@
+"""
+ARR-EMNLP dataset loader and TEI/Docling conversion utilities.
+
+This module provides functions to load, parse, and convert academic paper datasets from TEI XML and Docling JSON formats from the ARR-EMNLP dataset.
+It also extracts references, metadata, and prepares data for downstream review generation and retrieval tasks.
+"""
 import json
 import os
 from pathlib import Path
@@ -317,5 +323,6 @@ def main():
             print("\n📝 Reviews:  None found.")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     main()
