@@ -1,3 +1,9 @@
+"""
+ArXiv paper loader and text extraction utilities.
+
+This module provides functions to fetch, extract, and chunk full-text content from ArXiv papers.
+It supports markdown and plain text extraction, section trimming, and chunking for downstream processing.
+"""
 import requests
 import tempfile
 import os

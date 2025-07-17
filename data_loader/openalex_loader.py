@@ -1,3 +1,9 @@
+"""
+OpenAlex and arXiv metadata loader and vector storage utilities.
+
+This module provides functions to fetch paper metadata and abstracts from OpenAlex, decode and chunk abstracts,
+and store embedded documents in ChromaDB for retrieval-augmented generation workflows.
+"""
 import requests
 import time
 from urllib.parse import quote
