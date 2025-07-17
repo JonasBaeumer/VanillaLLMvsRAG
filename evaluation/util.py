@@ -1,3 +1,9 @@
+"""
+Utility functions for evaluation dataset integrity and filtering.
+
+This module provides helpers for filtering complete entries, checking dataset integrity,
+and logging missing or incomplete review fields for evaluation workflows.
+"""
 import logging
 
 logger = logging.getLogger(__name__)

@@ -1,3 +1,9 @@
+"""
+Evaluation pipeline runner script.
+
+This script loads LLM and RAG review outputs, merges and validates them, runs traditional and LLM-based evaluation metrics,
+and saves the results for further analysis.
+"""
 import json
 import logging
 import os
