@@ -1,4 +1,9 @@
-# rag_pipeline/retriever.py
+"""
+Retriever utilities for the RAG pipeline.
+
+This module provides functions to retrieve relevant context chunks from a ChromaDB collection
+given a query embedding. Used as part of the retrieval-augmented generation (RAG) workflow.
+"""
 
 import logging
 from typing import List

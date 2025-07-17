@@ -1,4 +1,9 @@
-# rag_pipeline/prompt_builder.py
+"""
+Prompt builder utilities for the RAG pipeline.
+
+This module provides functions to construct prompts for LLM-based review generation,
+including context injection and review guideline formatting.
+"""
 
 import logging
 from typing import List, Dict
@@ -7,6 +12,26 @@ logger = logging.getLogger(__name__)
 
 
 def build_review_prompt(paper: dict, guidelines: str, sample_reviews: str, context_chunks: List[str]) -> str:
+    """
+    Build a peer review prompt for an academic paper, including guidelines, paper content,
+    retrieved context, and an example review.
+
+    Parameters
+    ----------
+    paper : dict
+        Dictionary with keys 'title', 'abstract', and 'full_text'.
+    guidelines : str
+        Review guidelines to be followed.
+    sample_reviews : str
+        Example review for format and tone.
+    context_chunks : List[str]
+        List of additional context strings retrieved from similar papers.
+
+    Returns
+    -------
+    str
+        The formatted prompt string for the LLM.
+    """
     if any(chunk is None for chunk in context_chunks):
         print("⚠️ Warning: One or more context chunks were None and replaced with an empty string.")
 

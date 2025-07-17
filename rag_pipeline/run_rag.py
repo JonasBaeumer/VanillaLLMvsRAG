@@ -1,8 +1,14 @@
+"""
+RAG pipeline runner script.
+
+This script orchestrates the retrieval-augmented generation (RAG) pipeline for academic peer review generation.
+It loads datasets, retrieves relevant context from ChromaDB, builds prompts, generates reviews using an LLM,
+and saves the results for further evaluation.
+"""
 import json
 import re
 from rag_pipeline.retriever import retrieve_context
 from rag_pipeline.prompt_builder import build_prompt
-from rag_pipeline.prompt_templates import RAG_TEMPLATE_V1
 from chroma_db.chroma import initiate_chroma_db
 from data_loader.dataset_loader import load_arr_emnlp_dataset
 from data_loader.openalex_loader import fetch_abstracts_for_titles, store_openalex_papers_in_vector_db
@@ -20,6 +26,10 @@ logger = logging.getLogger("LLM-RAG-generation-Pipeline")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 def main():
+    """
+    Main entry point for the RAG pipeline.
+    Loads data, retrieves context, generates reviews, and saves outputs.
+    """
 
     start_time = time.time()
 
