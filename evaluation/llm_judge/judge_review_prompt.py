@@ -29,7 +29,6 @@ Your task: Evaluate the two reviews based on the 5 criteria and choose a winner.
 **Rules**:
 - For each category, select the better review: `a` for Review 0 or `b` for Review 1. You must always a winner even if the difference is small.
 - For the **<final_choice>**, select the review with the majority vote across the 5 criteria.
-- In case of a tie (e.g., 2 for a, 2 for b, 1 unclear), resolve it by choosing the review that provides more **actionable and specific feedback**.
 - ❗ You are **not allowed** to write "draw" in any field. Doing so violates the required output format.
 - Be objective, fair, and precise in your reasoning.
 
