@@ -1,4 +1,9 @@
-# rag_pipeline/generator.py
+"""
+LLM answer generation utility.
+
+This module provides a helper function to generate answers using a large language model (LLM)
+given a list of chat messages.
+"""
 
 import logging
 from typing import List, Dict

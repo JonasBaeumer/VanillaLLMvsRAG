@@ -1,3 +1,9 @@
+"""
+OpenAI model wrappers for embeddings and LLMs.
+
+This module provides concrete implementations of embedding and language models using the OpenAI API.
+Includes both embedding and chat-based LLM classes.
+"""
 import os
 import logging
 from typing import List, Dict

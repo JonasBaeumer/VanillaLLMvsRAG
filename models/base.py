@@ -1,4 +1,9 @@
-# models/base.py
+"""
+Abstract base classes for embedding models and LLMs.
+
+This module defines the interfaces for embedding models and large language models (LLMs),
+which must be implemented by concrete subclasses in the system.
+"""
 
 from abc import ABC, abstractmethod
 from typing import List, Dict
