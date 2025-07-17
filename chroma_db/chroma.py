@@ -370,41 +370,99 @@ def clear_collection(collection):
         logger.error(f"Error clearing collection: {e}")
         
 
-#if __name__ == "__main__":
-    # LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
-    # from sentence_transformers import SentenceTransformer
-    # # 1️⃣ Load embedding model (same for indexing & query)
-    # embed_model = SentenceTransformer("BAAI/bge-large-en")
-    # # 2️⃣ Initiate Chroma DB and collection
-    # db_dir = "./chroma_db"
-    # client = initiate_chroma_db(db_dir)
-    # collection = client.get_or_create_collection("papers")
-    # # 3️⃣ Define mock paper data
-    # papers = [
-    #     {
-    #         "id": "paper-001",
-    #         "document": "Transformers are neural networks designed to process sequential data using attention mechanisms.",
-    #         "metadata": {"title": "Attention is All You Need", "year": 2017},
-    #         "embedding": embed_model.encode("Transformers are neural networks designed to process sequential data using attention mechanisms.", normalize_embeddings=True).tolist()
-    #     },
-    #     {
-    #         "id": "paper-002",
-    #         "document": "Retrieval-augmented generation improves language models by grounding them on external documents.",
-    #         "metadata": {"title": "RAG: Retrieval-Augmented Generation", "year": 2020},
-    #         "embedding": embed_model.encode("Retrieval-augmented generation improves language models by grounding them on external documents.", normalize_embeddings=True).tolist()
-    #     },
-    #     {
-    #         "id": "paper-003",
-    #         "document": "Vector databases enable fast similarity search in high-dimensional embedding spaces.",
-    #         "metadata": {"title": "Vector Search at Scale", "year": 2022},
-    #         "embedding": embed_model.encode("Vector databases enable fast similarity search in high-dimensional embedding spaces.", normalize_embeddings=True).tolist()
-    #     }
-    # ]
-    # # 4️⃣ Store papers (first insert → should store them)
-    # print("\n=== First insert of papers ===")
-    # collection.add(
-    #     documents=[p["document"] for p in papers],
-    #     metadatas=[p["metadata"] for p in papers],
-    #     ids=[p["id"] for p in papers],
-    #     embeddings=[p["embedding"] for p in papers],
-    # )
+if __name__ == "__main__":
+    
+    # UNCOMMENT ONLY ON THE FIRST RUN TO INITIALIZE VECTOR STORAGE
+    # initiate_chroma_db("./chroma_db")
+    # print("ChromaDB initialized successfully.")
+
+    from sentence_transformers import SentenceTransformer
+
+    # 1️⃣ Load embedding model (same for indexing & query)
+    embed_model = SentenceTransformer("BAAI/bge-large-en")
+
+    # 2️⃣ Initiate Chroma DB and collection
+    db_dir = "./chroma_db"
+    client = initiate_chroma_db(db_dir)
+    collection = client.get_or_create_collection("papers")
+
+    # 3️⃣ Define mock paper data
+    papers = [
+        {
+            "id": "paper-001",
+            "document": "Transformers are neural networks designed to process sequential data using attention mechanisms.",
+            "metadata": {"title": "Attention is All You Need", "year": 2017},
+            "embedding": embed_model.encode("Transformers are neural networks designed to process sequential data using attention mechanisms.", normalize_embeddings=True).tolist()
+        },
+        {
+            "id": "paper-002",
+            "document": "Retrieval-augmented generation improves language models by grounding them on external documents.",
+            "metadata": {"title": "RAG: Retrieval-Augmented Generation", "year": 2020},
+            "embedding": embed_model.encode("Retrieval-augmented generation improves language models by grounding them on external documents.", normalize_embeddings=True).tolist()
+        },
+        {
+            "id": "paper-003",
+            "document": "Vector databases enable fast similarity search in high-dimensional embedding spaces.",
+            "metadata": {"title": "Vector Search at Scale", "year": 2022},
+            "embedding": embed_model.encode("Vector databases enable fast similarity search in high-dimensional embedding spaces.", normalize_embeddings=True).tolist()
+        }
+    ]
+
+    # 4️⃣ Store papers (first insert → should store them)
+    print("\n=== First insert of papers ===")
+    store_multiple_items(collection, papers)
+    time.sleep(0.5)
+
+    # 5️⃣ Attempt to store same papers again (should skip all)
+    print("\n=== Attempting to insert duplicate papers ===")
+    store_multiple_items(collection, papers)
+    time.sleep(0.5)
+
+    # 6️⃣ Insert one duplicate + one new item
+    print("\n=== Attempting to insert mixed batch (1 duplicate, 1 new) ===")
+    new_paper = {
+        "id": "paper-004",
+        "document": "Embedding models transform text into numerical representations for downstream tasks.",
+        "metadata": {"title": "Introduction to Embedding Models", "year": 2024},
+        "embedding": embed_model.encode("Embedding models transform text into numerical representations for downstream tasks.", normalize_embeddings=True).tolist()
+    }
+    mixed_batch = [papers[0], new_paper]   # paper-001 duplicate, paper-004 new
+
+    store_multiple_items(collection, mixed_batch)
+    time.sleep(0.5)
+
+    # 7️⃣ List all stored IDs
+    print("\n=== Stored IDs after duplicate tests ===")
+    all_ids = list_all_ids(collection)
+    print(all_ids)
+
+    # 8️⃣ Retrieve similar items
+    print("\n=== Retrieving similar items for query ===")
+    query_text = "How can retrieval help improve language models?"
+    query_embedding = embed_model.encode(query_text, normalize_embeddings=True).tolist()
+
+    similar_items = retrieve_similar_items(collection, query_embedding, n_results=3)
+    for idx, item in enumerate(similar_items, 1):
+        print(f"\nResult {idx}:")
+        print(f"ID: {item['id']}")
+        print(f"Title: {item['metadata'].get('title')}")
+        print(f"Distance: {item['distance']:.4f}")
+
+    # 9️⃣ Get single paper by ID
+    print("\n=== Get single item by ID ===")
+    item = get_item(collection, "paper-001")
+    print(item)
+
+    # 🔟 Delete one item
+    print("\n=== Deleting one item ===")
+    delete_item(collection, "paper-003")
+    print("Remaining IDs:", list_all_ids(collection))
+
+    # 🔄 Clear entire collection
+    print("\n=== Clearing collection ===")
+    clear_collection(collection)
+    client.persist()
+    time.sleep(0.5)
+    print("Final IDs:", list_all_ids(collection))
+
+    print("\n=== Test run complete. ===")

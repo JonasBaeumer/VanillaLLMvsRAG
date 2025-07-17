@@ -1,3 +1,8 @@
+"""
+BLANC scorer wrapper for traditional metrics evaluation.
+
+This module provides a class to compute BLANC-help scores for review evaluation.
+"""
 import logging
 import torch
 from blanc import BlancHelp
@@ -14,7 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 class BlancScorer:
+    """
+    BLANC scorer for evaluating the similarity between reference and generated reviews using BLANC-help.
+    """
     def __init__(self, model_name="bert-base-uncased", device=None):
+        """
+        Initialize the BLANC scorer with the specified model and device.
+        """
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Initializing BLANC scorer with model: {model_name} on device: {device}")
@@ -23,11 +34,13 @@ class BlancScorer:
     def score(self, references: list[str], candidates: list[str]) -> list[float]:
         """
         Calculates BLANC-help scores for each (reference, candidate) pair.
+
         Args:
-            references (list[str]): The document (paper abstract or full text).
-            candidates (list[str]): The generated reviews.
+            references (list of str): The document (paper abstract or full text).
+            candidates (list of str): The generated reviews.
+
         Returns:
-            list[float]: BLANC-help scores.
+            list of float: BLANC-help scores.
         """
         logger.info(f"Scoring {len(candidates)} reviews with BLANC-help.")
         scores = self.model.eval_pairs(docs=references, summaries=candidates)
@@ -36,7 +49,7 @@ class BlancScorer:
 
 
 # if __name__ == "__main__":
-#     LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
+#     # LOCAL TESTING ONLY: The following block is for manual/local testing and should not be run in production or on import.
 #     logging.basicConfig(level=logging.INFO)
 #     scorer = BlancScorer()
 #     doc = (

@@ -1,3 +1,8 @@
+"""
+Runner for traditional metrics evaluation (BLANC, BLEURT).
+
+This module provides functions to extract review text and run traditional metrics scoring on review datasets.
+"""
 import random
 import logging
 from evaluation.traditional_metrics.bleurt_scorer import BleurtScorer
@@ -24,6 +29,15 @@ def extract_generated_review_text(review_obj: dict) -> str:
     )
 
 def run_traditional_metrics(dataset):
+    """
+    Run BLANC and BLEURT scoring for LLM and RAG-generated reviews against human references.
+
+    Args:
+        dataset (list): List of paper entries with human and generated reviews.
+
+    Returns:
+        list: The dataset with added 'scores' for each entry.
+    """
     logger.info("Starting traditional metrics evaluation (BLANC, BLEURT)...")
 
     bleurt = BleurtScorer()

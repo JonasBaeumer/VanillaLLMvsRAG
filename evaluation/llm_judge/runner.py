@@ -1,3 +1,8 @@
+"""
+Runner for LLM-based ELO judging pipeline.
+
+This module provides the entry point for running the LLM-based ELO evaluation on review datasets.
+"""
 import logging
 from .llm_judge_scorer import run_llm_judge_scoring
 
