@@ -112,9 +112,9 @@ Seminar/
    ```
 3. **Configure API keys:**
    - For OpenAI models, set your API key as an environment variable:
-     ```bash
-     export OPENAI_API_KEY=your-key-here
-     ```
+   ```bash
+   export OPENAI_API_KEY=your-key-here
+   ```
 
 ---
 
