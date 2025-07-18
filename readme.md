@@ -104,7 +104,7 @@ Seminar/
 1. **Clone the repository:**
    ```bash
    git clone <repo-url>
-   cd Seminar
+   cd VanillaLLMvsRAG
    ```
 2. **Install dependencies:**
    ```bash
