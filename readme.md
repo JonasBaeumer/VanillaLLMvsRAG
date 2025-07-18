@@ -139,11 +139,3 @@ Seminar/
 - See code comments and docstrings for further customization and details.
 
 ---
-
-## Citation
-If you use this codebase in your research, please cite the associated paper (add citation here).
-
----
-
-## License
-Specify your license here (e.g., MIT, Apache 2.0, etc.).
